@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "umss.inscripcion.app.App",
+            "projectName": "UMSSInscripcionApp_e68732fc"
+        },
+        {
+            "type": "java",
+            "name": "Launch UMSSApp",
+            "request": "launch",
+            "mainClass": "umss.inscripcion.app.App",
+            "projectName": "UMSSInscripcionApp",
+            "vmArgs": "",
+            "args": ""
+        }
+    ]
+}
