@@ -18,9 +18,9 @@ public class App extends JFrame {
         setSize(600, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setIconImage(new ImageIcon("icon.png").getImage()); // Placeholder para un ícono (ajusta la ruta)
+        setIconImage(new ImageIcon("icon.png").getImage()); 
 
-        // Panel principal con gradiente
+      
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -33,14 +33,14 @@ public class App extends JFrame {
         mainPanel.setLayout(new BorderLayout());
         setContentPane(mainPanel);
 
-        // TabbedPane con estilo
+      
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Arial", Font.BOLD, 16));
         tabbedPane.setBackground(new Color(70, 130, 180));
         tabbedPane.setForeground(Color.WHITE);
         tabbedPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Tab 1: Registro de Postulante
+        
         JPanel panelRegistro = createStyledPanel();
         panelRegistro.setLayout(new GridBagLayout());
         GridBagConstraints gbcRegistro = new GridBagConstraints();
@@ -67,7 +67,7 @@ public class App extends JFrame {
 
         tabbedPane.addTab("Registro", panelRegistro);
 
-        // Tab 2: Inscripción a Curso Preuniversitario
+ 
         JPanel panelInscripcionCurso = createStyledPanel();
         panelInscripcionCurso.setLayout(new GridBagLayout());
         GridBagConstraints gbcCurso = new GridBagConstraints();
@@ -89,7 +89,7 @@ public class App extends JFrame {
 
         tabbedPane.addTab("Inscripción Curso", panelInscripcionCurso);
 
-        // Tab 3: Inscripción a Examen de Admisión
+       
         JPanel panelInscripcionExamen = createStyledPanel();
         panelInscripcionExamen.setLayout(new GridBagLayout());
         GridBagConstraints gbcExamen = new GridBagConstraints();
@@ -111,7 +111,7 @@ public class App extends JFrame {
 
         tabbedPane.addTab("Inscripción Examen", panelInscripcionExamen);
 
-        // Tab 4: Ver Horario
+       
         JPanel panelHorario = createStyledPanel();
         panelHorario.setLayout(new BorderLayout(10, 10));
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -130,7 +130,7 @@ public class App extends JFrame {
         panelHorario.add(scrollHorario, BorderLayout.SOUTH);
         tabbedPane.addTab("Horario", panelHorario);
 
-        // Tab 5: Ver Notas
+      
         JPanel panelNotas = createStyledPanel();
         panelNotas.setLayout(new BorderLayout(10, 10));
         JPanel inputPanelNotas = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -199,7 +199,7 @@ public class App extends JFrame {
             BorderFactory.createLineBorder(new Color(135, 206, 235), 1),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        textField.setEditable(true); // Asegurando que sea editable
+        textField.setEditable(true); 
         panel.add(textField, gbc);
     }
 
