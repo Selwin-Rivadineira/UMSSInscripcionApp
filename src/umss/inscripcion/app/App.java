@@ -11,6 +11,9 @@ public class App extends JFrame {
     private JTextField txtIDPostulanteCurso, txtIDCurso, txtIDPostulanteExamen, txtIDConvocatoria;
     private JTextField txtIDPostulanteHorario, txtIDPostulanteNotas;
     private JTextArea txtHorario, txtNotas;
+    private JTextField txtNombrePostulante;
+    private JTextField txtApellidoPostulante;
+    private JTextField txtCIPostulante;
 
     public App() {
         // Configuración básica de la ventana
@@ -75,13 +78,22 @@ public class App extends JFrame {
         gbcCurso.fill = GridBagConstraints.HORIZONTAL;
         gbcCurso.weightx = 1.0;
 
-        addLabelAndField(panelInscripcionCurso, gbcCurso, 0, "ID Postulante:", txtIDPostulanteCurso = new JTextField(15));
-        addLabelAndField(panelInscripcionCurso, gbcCurso, 1, "ID Curso:", txtIDCurso = new JTextField(15));
+        addLabelAndField(panelInscripcionCurso, gbcCurso, 0, "Nombre:", new JTextField(15));
+        txtNombrePostulante = (JTextField) panelInscripcionCurso.getComponent(panelInscripcionCurso.getComponentCount() - 1);
+
+        addLabelAndField(panelInscripcionCurso, gbcCurso, 1, "Apellido:", new JTextField(15));
+        txtApellidoPostulante = (JTextField) panelInscripcionCurso.getComponent(panelInscripcionCurso.getComponentCount() - 1);
+
+        addLabelAndField(panelInscripcionCurso, gbcCurso, 2, "CI:", new JTextField(15));
+        txtCIPostulante = (JTextField) panelInscripcionCurso.getComponent(panelInscripcionCurso.getComponentCount() - 1);
+
+        addLabelAndField(panelInscripcionCurso, gbcCurso, 3, "ID Curso:", txtIDCurso = new JTextField(15));
+
 
         JButton btnInscribirCurso = createStyledButton("Inscribir");
         btnInscribirCurso.addActionListener(e -> inscribirCurso());
-        gbcCurso.gridx = 0;
-        gbcCurso.gridy = 2;
+        gbcCurso.gridx = 1;
+        gbcCurso.gridy = 4;
         gbcCurso.gridwidth = 2;
         gbcCurso.fill = GridBagConstraints.NONE;
         gbcCurso.anchor = GridBagConstraints.CENTER;
@@ -259,23 +271,47 @@ public class App extends JFrame {
     }
 
     private void inscribirCurso() {
-        try {
-            int idPostulante = Integer.parseInt(txtIDPostulanteCurso.getText());
-            int idCurso = Integer.parseInt(txtIDCurso.getText());
+         String nombre = txtNombrePostulante.getText().trim();
+    String apellido = txtApellidoPostulante.getText().trim();
+    String ci = txtCIPostulante.getText().trim();
 
-            try (Connection conn = DatabaseConnector.getConnection()) {
-                String sql = "INSERT INTO InscripcionCurso (id_postulante, id_curso) VALUES (?, ?)";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setInt(1, idPostulante);
-                stmt.setInt(2, idCurso);
-                stmt.executeUpdate();
+    if (nombre.isEmpty() || apellido.isEmpty() || ci.isEmpty() || txtIDCurso.getText().trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Por favor, completa todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    try {
+        int idCurso = Integer.parseInt(txtIDCurso.getText());
+
+        try (Connection conn = DatabaseConnector.getConnection()) {
+            // Buscar el postulante por nombre, apellido y CI
+            String sqlBuscar = "SELECT id_postulante FROM postulante WHERE nombre=? AND apellido=? AND ci=?";
+            PreparedStatement stmtBuscar = conn.prepareStatement(sqlBuscar);
+            stmtBuscar.setString(1, nombre);
+            stmtBuscar.setString(2, apellido);
+            stmtBuscar.setString(3, ci);
+            ResultSet rs = stmtBuscar.executeQuery();
+
+            if (rs.next()) {
+                int idPostulante = rs.getInt("id_postulante");
+
+                // Inscribir al curso
+                String sqlInscribir = "INSERT INTO inscripcioncurso (id_postulante, id_curso) VALUES (?, ?)";
+                PreparedStatement stmtInscribir = conn.prepareStatement(sqlInscribir);
+                stmtInscribir.setInt(1, idPostulante);
+                stmtInscribir.setInt(2, idCurso);
+                stmtInscribir.executeUpdate();
+
                 JOptionPane.showMessageDialog(this, "Inscripción al curso exitosa.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "No se encontró un postulante con esos datos.", "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "ID Postulante y Curso deben ser números.", "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error al inscribir: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this, "El ID Curso debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error al inscribir: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
     }
 
     private void inscribirExamen() {
