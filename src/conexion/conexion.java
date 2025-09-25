@@ -13,7 +13,6 @@ private static final String URL = "jdbc:mysql://metro.proxy.rlwy.net:54083/sis_i
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             cn = DriverManager.getConnection(URL, USER, PASS);
-            System.out.println("✅ Conexión exitosa a la base de datos.");
         } catch (ClassNotFoundException e) {
             System.out.println("No se encontró el Driver MySQL: " + e.getMessage());
         } catch (SQLException e) {
