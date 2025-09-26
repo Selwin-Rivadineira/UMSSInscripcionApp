@@ -14,6 +14,8 @@ public class App extends JFrame {
     private JTextField txtNombrePostulante;
     private JTextField txtApellidoPostulante;
     private JTextField txtCIPostulante;
+    private JComboBox<String> cmbCursos; 
+    private int selectedCursoId = -1;    
 
     public App() {
         // Configuración básica de la ventana
@@ -87,7 +89,49 @@ public class App extends JFrame {
         addLabelAndField(panelInscripcionCurso, gbcCurso, 2, "CI:", new JTextField(15));
         txtCIPostulante = (JTextField) panelInscripcionCurso.getComponent(panelInscripcionCurso.getComponentCount() - 1);
 
-        addLabelAndField(panelInscripcionCurso, gbcCurso, 3, "ID Curso:", txtIDCurso = new JTextField(15));
+        cmbCursos = new JComboBox<>();
+        cmbCursos.setFont(new Font("Arial", Font.PLAIN, 14));
+        cmbCursos.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createLineBorder(new Color(135, 206, 235), 1),
+        BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        // Cargar cursos desde la base de datos
+        cargarCursos();
+
+        // Agregar listener para capturar el ID cuando cambie la selección
+        cmbCursos.addActionListener(e -> {
+            String selectedNombre = (String) cmbCursos.getSelectedItem();
+                if (selectedNombre != null && !selectedNombre.isEmpty()) {
+                try (Connection conn = DatabaseConnector.getConnection()) {
+                    String sql = "SELECT id_curso FROM cursopreuniversitario WHERE nombre = ?";
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    stmt.setString(1, selectedNombre);
+                    ResultSet rs = stmt.executeQuery();
+                    if (rs.next()) {
+                        selectedCursoId = rs.getInt("id_curso");
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Error al obtener ID del curso: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+// Etiqueta "Curso:"
+gbcCurso.gridx = 0;
+gbcCurso.gridy = 3;
+gbcCurso.gridwidth = 1;
+gbcCurso.fill = GridBagConstraints.HORIZONTAL;
+JLabel lblCurso = new JLabel("Curso:");
+lblCurso.setFont(new Font("Arial", Font.BOLD, 14));
+lblCurso.setForeground(new Color(70, 130, 180));
+panelInscripcionCurso.add(lblCurso, gbcCurso);
+
+// ComboBox
+gbcCurso.gridx = 1;
+gbcCurso.gridy = 3;
+gbcCurso.gridwidth = 1;
+panelInscripcionCurso.add(cmbCursos, gbcCurso);
 
 
         JButton btnInscribirCurso = createStyledButton("Inscribir");
@@ -277,40 +321,39 @@ public class App extends JFrame {
     String apellido = txtApellidoPostulante.getText().trim();
     String ci = txtCIPostulante.getText().trim();
 
-    if (nombre.isEmpty() || apellido.isEmpty() || ci.isEmpty() || txtIDCurso.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Por favor, completa todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
+    if (nombre.isEmpty() || apellido.isEmpty() || ci.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Por favor, completa todos los campos obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
 
-    try {
-        int idCurso = Integer.parseInt(txtIDCurso.getText());
+    if (selectedCursoId == -1) {
+        JOptionPane.showMessageDialog(this, "Por favor, selecciona un curso válido.", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
 
-        try (Connection conn = DatabaseConnector.getConnection()) {
-            // Buscar el postulante por nombre, apellido y CI
-            String sqlBuscar = "SELECT id_postulante FROM postulante WHERE nombre=? AND apellido=? AND ci=?";
-            PreparedStatement stmtBuscar = conn.prepareStatement(sqlBuscar);
-            stmtBuscar.setString(1, nombre);
-            stmtBuscar.setString(2, apellido);
-            stmtBuscar.setString(3, ci);
-            ResultSet rs = stmtBuscar.executeQuery();
+    try (Connection conn = DatabaseConnector.getConnection()) {
+        // Buscar el postulante por nombre, apellido y CI
+        String sqlBuscar = "SELECT id_postulante FROM postulante WHERE nombre=? AND apellido=? AND ci=?";
+        PreparedStatement stmtBuscar = conn.prepareStatement(sqlBuscar);
+        stmtBuscar.setString(1, nombre);
+        stmtBuscar.setString(2, apellido);
+        stmtBuscar.setString(3, ci);
+        ResultSet rs = stmtBuscar.executeQuery();
 
-            if (rs.next()) {
-                int idPostulante = rs.getInt("id_postulante");
+        if (rs.next()) {
+            int idPostulante = rs.getInt("id_postulante");
 
-                // Inscribir al curso
-                String sqlInscribir = "INSERT INTO inscripcioncurso (id_postulante, id_curso) VALUES (?, ?)";
-                PreparedStatement stmtInscribir = conn.prepareStatement(sqlInscribir);
-                stmtInscribir.setInt(1, idPostulante);
-                stmtInscribir.setInt(2, idCurso);
-                stmtInscribir.executeUpdate();
+            // Inscribir al curso
+            String sqlInscribir = "INSERT INTO inscripcioncurso (id_postulante, id_curso) VALUES (?, ?)";
+            PreparedStatement stmtInscribir = conn.prepareStatement(sqlInscribir);
+            stmtInscribir.setInt(1, idPostulante);
+            stmtInscribir.setInt(2, selectedCursoId);
+            stmtInscribir.executeUpdate();
 
-                JOptionPane.showMessageDialog(this, "Inscripción al curso exitosa.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "No se encontró un postulante con esos datos.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            JOptionPane.showMessageDialog(this, "Inscripción al curso \"" + cmbCursos.getSelectedItem() + "\" exitosa.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "No se encontró un postulante con esos datos.", "Error", JOptionPane.ERROR_MESSAGE);
         }
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(this, "El ID Curso debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(this, "Error al inscribir: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
@@ -420,6 +463,29 @@ public class App extends JFrame {
         txtDireccion.setText("");
         txtIDCursoRegistro.setText("");
     }
+
+    private void cargarCursos() {
+    cmbCursos.removeAllItems(); 
+    cmbCursos.addItem(""); 
+
+    try (Connection conn = DatabaseConnector.getConnection()) {
+        String sql = "SELECT nombre FROM cursopreuniversitario ORDER BY nombre";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            String nombreCurso = rs.getString("nombre");
+            cmbCursos.addItem(nombreCurso);
+        }
+
+        if (cmbCursos.getItemCount() == 1) { // Solo tiene el vacío
+            cmbCursos.addItem("No hay cursos disponibles");
+        }
+
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error al cargar cursos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
