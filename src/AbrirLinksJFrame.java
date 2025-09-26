@@ -6,7 +6,7 @@ import java.net.URI;
 
 public class AbrirLinksJFrame {
     public static JLabel crearLink(JFrame ventana, String texto, String url) {
-        JLabel label = new JLabel( texto );
+        JLabel label = new JLabel(texto);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
         label.setForeground(Color.BLUE); 
 
@@ -25,33 +25,23 @@ public class AbrirLinksJFrame {
                     JOptionPane.showMessageDialog(ventana, "Error al abrir el link");
                 }
             }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                label.setText(texto );
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                label.setText(texto ); 
-            }
         });
 
         return label;
     }
-
-    public static void main(String[] args) {
-        JFrame ventana = new JFrame("Abrir Links con JLabel");
-        ventana.setSize(400, 200);
-        ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        ventana.setLayout(new GridLayout(3, 1)); 
+    public static JPanel crearPieDePagina(JFrame ventana) {
+        JPanel pie = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        pie.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY)); // línea superior
+        
         JLabel link1 = crearLink(ventana, "Facebook", "https://www.facebook.com/universidadmayordesansimonumss?locale=es_LA");
         JLabel link2 = crearLink(ventana, "Página Oficial", "https://www.umss.edu.bo");
         JLabel link3 = crearLink(ventana, "SAGAA", "https://sagaa.fcyt.umss.edu.bo/login/login.php");
-        ventana.add(link1);
-        ventana.add(link2);
-        ventana.add(link3);
-        ventana.setLocationRelativeTo(null);
-        ventana.setVisible(true);
+
+        pie.add(link1);
+        pie.add(new JLabel(" | "));
+        pie.add(link2);
+        pie.add(new JLabel(" | "));
+        pie.add(link3);
+        return pie;
     }
 }

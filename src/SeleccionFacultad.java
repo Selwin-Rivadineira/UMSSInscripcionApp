@@ -20,7 +20,8 @@ public class SeleccionFacultad extends JFrame {
     public SeleccionFacultad() {
         
         conn = conexion.getconexion();
-        
+        SeleccionFacultad.this.add(AbrirLinksJFrame.crearPieDePagina(SeleccionFacultad.this),BorderLayout.SOUTH);
+
         facultades = obtenerFacultades();
         
         setTitle("Selección de Facultad - UMSS");
@@ -82,9 +83,4 @@ public class SeleccionFacultad extends JFrame {
         return facultadesList;
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new SeleccionFacultad().setVisible(true);
-        });
-    }
 }

@@ -21,6 +21,7 @@ public class infoPreUniversitarios extends JFrame {
     }
 
     private void crearGUI() {
+        infoPreUniversitarios.this.add(AbrirLinksJFrame.crearPieDePagina(infoPreUniversitarios.this),BorderLayout.SOUTH);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
