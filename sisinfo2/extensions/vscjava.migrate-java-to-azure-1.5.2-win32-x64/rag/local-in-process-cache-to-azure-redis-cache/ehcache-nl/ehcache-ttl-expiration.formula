@@ -1,0 +1,73 @@
+name: 'Migrate Ehcache TTL and expiration configuration to Azure Cache for Redis'
+description: "Converts Ehcache time-to-live and expiration policies to Azure Cache for Redis equivalents"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    timeToLiveSeconds|timeToIdleSeconds|setTimeToLive|setTimeToIdle|eternal=|diskExpiryThreadIntervalSeconds|setEternal
+
+steps:
+  - description: "Migrate Ehcache TTL and expiration configuration to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that configures Ehcache time-to-live (TTL) and expiration policies to use Azure Cache for Redis equivalents. Follow these detailed instructions to make the transition:
+
+      ## Identifying Ehcache TTL and Expiration Configurations
+      
+      Look for these Ehcache TTL and expiration patterns:
+      
+      1. In programmatic configuration:
+         - timeToLiveSeconds(seconds) or .timeToLiveSeconds(seconds)
+         - timeToIdleSeconds(seconds) or .timeToIdleSeconds(seconds)
+         - eternal(true/false) or .eternal(true/false)
+      
+      2. On individual cache elements:
+         - element.setTimeToLive(seconds)
+         - element.setTimeToIdle(seconds)
+         - element.setEternal(true/false)
+      
+      3. In XML configuration references:
+         - Properties parsed from XML with timeToLive settings
+      
+      ## Replacement Strategy
+      
+      Convert Ehcache TTL configurations to Redis equivalents:
+      
+      1. For cache-level TTL in Spring applications:
+         - Use RedisCacheConfiguration's entryTtl method
+         - Configure in RedisCacheManager bean
+         - Set per-cache TTL with withInitialCacheConfigurations
+      
+      2. For individual key TTL settings:
+         - With RedisTemplate: Use opsForValue().set(key, value, Duration) or expire(key, Duration)
+         - With Lettuce client: Use commands.setex(key, ttl, value) or commands.expire(key, ttl)
+      
+      3. For timeToIdleSeconds:
+         - Redis has no direct equivalent for idle time
+         - Use TTL as an alternative
+         - For critical cases, implement application-level tracking
+      
+      4. For eternal=true:
+         - Simply don't set an expiration in Redis
+         - Omit TTL configuration for those caches
+      
+      ## Implementation Considerations
+      
+      - Redis expiration is based on TTL, not idle time
+      - For Ehcache's eternal=true, Redis entries without expiration won't be evicted by time
+      - Redis eviction policies (LRU, LFU) are server settings, not per-key
+      - Convert seconds to Duration objects in Spring config: Duration.ofSeconds(seconds)
+      - Ehcache's fine-grained per-element TTL must become key-level in Redis
+      - If varied TTLs were essential with Ehcache, maintain this pattern with Redis
+      - If diskStore was used with Ehcache, consider Redis persistence options
+      
+      ## Implementation Notes
+      
+      1. Replace Ehcache's timeToLiveSeconds with Redis TTL configurations
+      2. Redis does not have a direct equivalent of Ehcache's timeToIdleSeconds (idle time) - use TTL instead
+      3. Ehcache's "eternal=true" means entries never expire - in Redis, simply don't set an expiration
+      4. Replace Ehcache's individual element TTL settings with Redis key expiration commands
+      5. Ehcache's eviction policies (LRU, LFU, FIFO) map to Redis's maxmemory-policy, which is set in the Redis server configuration
+      6. When using Spring, configure TTL in the RedisCacheConfiguration for each cache
+      7. For Azure Cache for Redis, ensure your cache tier provides enough memory to avoid excessive evictions
+      8. Redis does not have disk persistence like Ehcache - consider using Redis persistence options (RDB or AOF) instead

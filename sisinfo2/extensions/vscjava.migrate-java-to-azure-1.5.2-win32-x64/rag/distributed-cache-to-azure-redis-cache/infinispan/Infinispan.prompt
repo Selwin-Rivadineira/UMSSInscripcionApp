@@ -1,0 +1,201 @@
+#codebase
+
+Migration Guide: Infinispan → Azure Cache for Redis
+
+### Context
+Your Java project currently uses Infinispan as a distributed cache
+Key Points:
+1. You need to migrate the entire project to use Azure Cache for Redis instead of Infinispan, focusing on code changes, dependency updates, and configuration adjustments.
+2. Please find suitable places to make the changes directly, like in-place modifying the pom.xml/build.gradle/application.yml file, write compilable code, don't leave uncompleted code blocks.
+3. You need to change the all the Infinispan cache related logic and keep other unchanged. At the same time, each place that uses Infinispan API, must be replaced with Azure cache for redis ones.
+4. Ignore data migration and infrastructure setup.
+5. You should delete or comment out the original implementation, since the depdendency will be removed. Or we cannot pass the build.
+
+---
+
+### 1. Dependency Replacement
+Remove Infinispan dependencies and replace them with Redis client libraries (e.g., Lettuce or Jedis):
+```xml
+<!-- Remove Infinispan dependencies -->
+<dependency>
+    <groupId>org.infinispan</groupId>
+    <artifactId>infinispan-core</artifactId>
+    <version>15.0.0</version>
+</dependency>
+
+<!-- Add Lettuce (Redis client) -->
+<dependency>
+    <groupId>io.lettuce</groupId>
+    <artifactId>lettuce-core</artifactId>
+    <version>6.2.4</version>
+</dependency>
+<!-- Optional: Spring Boot Redis Starter -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>3.4.4</version>
+</dependency>
+```
+
+---
+
+### 2. Configuration Changes
+Note: if it's a spring boot project, consider leveraging the spring boot properties file to init the redis connections. At the same time, Azure cache for Redis requires SSL -> true by default.
+Replace Infinispan Cache Configuration with Azure Redis SSL/TLS Connection:
+```java
+// Infinispan (remove)
+GlobalConfigurationBuilder builder = GlobalConfigurationBuilder.defaultClusteredBuilder();
+builder.transport().clusterName("my-cluster");
+EmbeddedCacheManager cacheManager = new DefaultCacheManager(builder.build());
+
+// Redis (new)
+RedisURI uri = RedisURI.Builder.redis("<AZURE_REDIS_HOST>")
+    .withPort(6380)
+    .withSsl(true)  // Azure Redis requires SSL
+    .withAuthentication("<USERNAME>", "<PASSWORD>")
+    .build();
+RedisClient client = RedisClient.create(uri);
+StatefulRedisConnection<String, String> connection = client.connect();
+```
+Optional: Spring Boot `application.yml` Configuration
+  If using Spring Boot, update Redis properties (keep strict the same properties), and please also consider using the following configs in the redis connection file above:
+```yaml
+spring:
+  data:
+    redis:
+      host: <AZURE_REDIS_HOST>
+      port: 6380
+      username: <USERNAME>
+      password: <PASSWORD>
+      ssl:
+        enabled: true
+      lettuce:
+        pool:
+          max-active: 20  # Optimize connection pooling
+```
+
+---
+
+### 3. Code Refactoring
+
+You need to find all the distributed cache related usages and replace them with Azure cache for redis implementation base on the guides below:
+
+#### 3.1 Cache Operations
+- Basic Read/Write:
+  ```java
+  // Infinispan
+  Cache<String, String> cache = cacheManager.getCache("myCache");
+  cache.put("key", "value");
+  String value = cache.get("key");
+
+  // Redis
+  RedisCommands<String, String> commands = connection.sync();
+  commands.set("key", "value");
+  String value = commands.get("key");
+  ```
+
+- Entry Processors → Lua Scripts:
+  ```java
+  // Infinispan (EntryProcessor)
+  cache.put("key", "value");
+  cache.execute("key", (EntryProcessor<String, String, Void>) (entry, ctx) -> {
+      entry.setValue(entry.getValue() + "-modified");
+      return null;
+  });
+
+  // Redis (Lua script)
+  String script = "redis.call('SET', KEYS[1], ARGV[1] .. '-modified')";
+  commands.eval(script, ScriptOutputType.STATUS, new String[]{"key"}, "value");
+  ```
+
+#### 3.2 Distributed Data Structures
+- Infinispan Multimap → Redis Hashes:
+  ```java
+  // Infinispan
+  MultimapCache<String, String> multimap = Infinispan.getMultimapCache("myMultimap");
+  multimap.put("user", "role1");
+
+  // Redis
+  commands.hset("user:roles", "role1", "true");
+  ```
+- Infinispan Cache Aliases → Redis Databases:
+  Infinispan uses aliases to emulate Redis databases (e.g., `SELECT 1`). Azure Redis supports 16 databases by default. Use `SELECT <db-index>` to switch:
+  ```java
+  commands.select(1);  // Switch to database 1
+  ```
+
+#### 3.3 Transactions
+```java
+// Infinispan (Transactional)
+try tx = cache.getAdvancedCache().getTransactionManager().begin()) {
+    cache.put("key1", "value1");
+    cache.put("key2", "value2");
+    tx.commit();
+}
+
+// Redis (MULTI/EXEC)
+commands.multi();
+commands.set("key1", "value1");
+commands.set("key2", "value2");
+commands.exec();
+```
+
+---
+
+### 4. Data Migration Strategies
+#### 4.1 Export/Import via RDB File
+- Infinispan → Redis: Use Infinispan’s Redis cache store to export data, then import into Azure Redis via RDB files.
+  ```bash
+  # Export from Infinispan (via RESP endpoint)
+  redis-cli --rdb dump.rdb -h <INFINISPAN_HOST> -p 11222
+
+  # Import to Azure Redis (Premium tier only)
+  az redis import --resource-group <RG> --name <CACHE> --files @dump.rdb
+  ```
+
+#### 4.2 Dual-Write Strategy
+Temporarily write data to both Infinispan and Azure Redis to avoid downtime:
+```java
+// Write to both caches during migration
+cache.put("key", "value");  // Infinispan
+commands.set("key", "value");  // Redis
+```
+
+---
+
+### 5. Advanced Features
+#### 5.1 Distributed Locks
+```java
+// Infinispan
+Lock lock = cache.getAdvancedCache().lock("key");
+lock.lock();
+try { /* critical section */ } finally { lock.unlock(); }
+
+// Redis (SETNX-based)
+String result = commands.set("lock-key", "owner", SetArgs.Builder.nx().ex(10));
+if ("OK".equals(result)) {
+    try { /* critical section */ } finally { commands.del("lock-key"); }
+}
+```
+
+#### 5.2 Cache Eviction
+- Infinispan Eviction Policies → Redis `maxmemory-policy`:
+  Configure Azure Redis eviction policies via the Azure portal (e.g., `allkeys-lru`).
+
+---
+
+### Pass the build
+Use this command to check whether the project can pass the build after migration. If not, fix any build error and make sure it pass the build.
+For windows:
+```
+cmd /c "mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8"
+```
+For Linux / macOS:
+```
+mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8
+```
+
+### Key Takeaways
+1. Pattern Adaptation: Replace Infinispan’s cache aliases with Redis databases using `SELECT`.
+2. Data Migration: Use RDB files for bulk transfers or dual-write for zero downtime.
+3. Advanced Features: Migrate distributed locks and transactions using Redis’s `SETNX` and `MULTI/EXEC`.

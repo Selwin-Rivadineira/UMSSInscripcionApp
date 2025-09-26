@@ -1,0 +1,177 @@
+#codebase
+
+Here's a structured prompt to guide migrating from Spring Cache to Azure Cache for Redis, focusing on code/config changes and Redis connection specifics:
+
+---
+
+**Task Prompt: Spring Cache → Azure Cache for Redis Migration**
+
+### Context
+Your Java project currently uses Spring Cache as a distributed cache
+Key Points:
+1. You need to migrate the entire project to use Azure Cache for Redis instead of Spring Cache, focusing on code changes, dependency updates, and configuration adjustments.
+2. Please find suitable places to make the changes directly, like in-place modifying the pom.xml/build.gradle/application.yml file, write compilable code, don't leave uncompleted code blocks.
+3. You need to change the all the Spring Cache cache related logic and keep other unchanged. At the same time, each place that uses Spring Cache api, must be replaced with Azure cache for redis ones.
+4. Ignore data migration and infrastructure setup.
+5. You should delete or comment out the original implementation, since the depdendency will be removed. Or we cannot pass the build.
+
+---
+
+### **Key Migration Areas**
+1. Dependency updates (Spring Cache → Azure Redis client)
+2. Connection configuration for Azure Redis
+3. Annotation adaptation & serialization
+4. Cache manager/operation alignment
+5. Azure-specific optimizations
+
+---
+
+### **Action Steps & Examples**
+
+#### **1. Dependency Updates**
+Replace Spring Cache's default provider with Redis client:
+```xml
+<!-- Before: Generic Spring Cache -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+
+<!-- After: Azure Redis integration -->
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>5.2.0</version>
+</dependency>
+<!-- Optional: Spring Boot Redis Starter -->
+    <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>3.4.4</version>
+</dependency>
+```
+*Note*: Remove any local cache providers like Caffeine/Ehcache.
+
+---
+
+#### **2. Azure Redis Connection Configuration**
+- Configure application properties for Azure-specific requirements:
+```yaml
+# application.yml
+spring:
+  redis:
+    host: your-cache.redis.cache.windows.net
+    port: 6380 # Azure enforces SSL
+    password: your-access-key
+    ssl: true
+    timeout: 5000ms
+    jedis:
+      pool:
+        max-active: 50 # Align with Azure tier limits
+        min-idle: 5
+```
+*Key points*:
+- Mandatory SSL on port 6380
+- Use Azure Portal "Access Keys" for password
+- Configure connection pooling to avoid throttling
+
+- Configure Azure Redis Connection
+    Implement secure connection with Microsoft Entra ID authentication:
+    ```java
+    // Jedis library doesn't support passing in AzureCredentials, so fall back to access key solution
+    JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setMaxTotal(50); // Match WebSphere thread pool
+
+    JedisPool pool = new JedisPool(poolConfig,
+        "<your-cache>.redis.cache.windows.net",
+        6380,
+        2000,
+        "<your-access-key>",
+        true // SSL
+    );
+    ```
+
+---
+
+#### **3. RedisTemplate & Serialization**
+Configure JSON serialization for Azure compatibility:
+```java
+@Configuration
+@EnableCaching
+public class RedisConfig {
+
+    @Bean
+    public RedisCacheConfiguration cacheConfiguration() {
+        return RedisCacheConfiguration.defaultCacheConfig()
+            .serializeKeysWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new GenericJackson2JsonRedisSerializer()))
+            .entryTtl(Duration.ofMinutes(30));
+    }
+
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(env.getProperty("spring.redis.host"));
+        config.setPort(env.getProperty("spring.redis.port", Integer.class));
+        config.setPassword(env.getProperty("spring.redis.password"));
+        return new JedisConnectionFactory(config);
+    }
+}
+```
+*Why*: Azure requires non-binary serialization for cross-platform access.
+
+---
+
+#### **4. Annotation Migration**
+Retain Spring Cache annotations but reconfigure for Redis:
+```java
+// Before: Generic @Cacheable
+@Cacheable(value = "products", key = "#id")
+public Product getProduct(Long id) { ... }
+
+// After: Redis-optimized version
+@Cacheable(value = "products", key = "#id", unless = "#result == null")
+public Product getProduct(Long id) {
+    // Add Redis-specific error handling
+}
+```
+*Adaptations needed*:
+- Add `unless` conditions to prevent null caching
+- Implement retry logic for Azure transient failures
+- Replace `@CacheEvict` with Redis TTL strategies
+
+---
+
+#### **5. Connection Validation**
+Add health check endpoint:
+```java
+@RestController
+public class HealthController {
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @GetMapping("/cache-health")
+    public String checkHealth() {
+        try {
+            redisTemplate.opsForValue().set("healthcheck", "ok", 10, TimeUnit.SECONDS);
+            return "Azure Redis connection OK";
+        } catch (Exception e) {
+            return "Connection failed: " + e.getMessage();
+        }
+    }
+}
+```
+
+### Pass the build
+Use this command to check whether the project can pass the build after migration. If not, fix any build error and make sure it pass the build.
+For windows:
+```
+cmd /c "mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8"
+```
+For Linux / macOS:
+```
+mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8
+```

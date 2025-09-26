@@ -1,0 +1,76 @@
+name: 'Migrate S3client headObject to Azure Blob Storage getProperties'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    HeadObjectRequest|HeadObjectResponse
+steps:
+  - description: "Migrate s3client with headObject API to Azure Blob Storage getProperties"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: HeadObjectRequest.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - HeadObjectRequest.Builder	bucket​(String bucket)
+            Description: The name of the bucket that contains the object.
+            Parameters:
+              - bucket - The name of the bucket that contains the object.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - HeadObjectRequest.Builder	bucket​(String bucket)
+            Description: The object key.
+            Parameters:
+              - bucket - The object key.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - HeadObjectRequest.Builder versionId​(String versionId)
+            Description: Version ID used to reference a specific version of the object.
+            Parameters:
+              - versionId - Version ID used to reference a specific version of the object.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Class: HeadObjectResponse
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - Long contentLength()
+            Description: Returns Size of the body in bytes.
+            Parameters: N/A
+            Returns: Size of the body in bytes.
+          - String eTag()
+            Description: An entity tag (ETag) is an opaque identifier assigned by a web server to a specific version of a resource found at a URL.
+            Parameters: N/A
+            Returns: An entity tag (ETag) is an opaque identifier assigned by a web server to a specific version of a resource found at a URL.
+          - String versionId()
+            Description: Version ID of the object.
+            Parameters: N/A
+            Returns: Version ID of the object.
+
+      Class: BlobClientBase
+        Package: com.azure.storage.blob.specialized
+        Note: `The package of `BlobClient` is com.azure.storage.blob and the package of `BlobClientBase` is com.azure.storage.blob.specialized, don't make mistake here.
+        Methods:
+          - BlobProperties getProperties()
+            Description: Returns the blob's metadata and properties.
+            Parameters: N/A
+            Returns: The blob properties and metadata.
+
+      Class: BlobProperties
+        Package: com.azure.storage.blob.models
+        Methods:
+          - long getBlobSize()
+            Description: Returns the size of the blob in bytes
+            Parameters: N/A
+            Returns: The size of the blob in bytes
+          - String getETag()
+            Description: Returns the eTag of the blob
+            Parameters: N/A
+            Returns: The eTag of the blob
+          - String String getVersionId()
+            Description: Returns the version identifier the blob.
+            Parameters: N/A
+            Returns: Returns the version identifier the blob.

@@ -1,0 +1,147 @@
+name: 'Migrate S3client deleteObject(s) to Azure Blob Storage deleteBlobs'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    DeleteObjectRequest|DeleteObjectResponse|DeleteObjectsRequest|DeleteObjectsResponse
+steps:
+  - description: "Migrate s3client with deleteObject(s) API to Azure Blob Storage deleteBlobs"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      You should pay attention that only the BlobBatchClient can do multiple blob deletes via function deleteBlobs.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: DeleteObjectRequest.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - DeleteObjectRequest.Builder bucket​(String bucket)
+            Description: The bucket name of the bucket containing the object.
+            Parameters:
+              - bucket - The bucket name of the bucket containing the object.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectRequest.Builder key(String key)
+            Description: Key name of the object to delete.
+            Parameters:
+              - key - Key name of the object to delete.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectRequest.Builder versionId​(String versionId)
+            Description: Version ID used to reference a specific version of the object.
+            Parameters:
+              - versionId - Version ID used to reference a specific version of the object.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Interface: DeleteObjectResponse.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - DeleteObjectResponse.Builder deleteMarker​(Boolean deleteMarker)
+            Description: Indicates whether the specified object version that was permanently deleted was (true) or was not (false) a delete marker before deletion. In a simple DELETE, this header indicates whether (true) or not (false) the current version of the object is a delete marker.
+            Parameters:
+              - deleteMarker - Indicates whether the specified object version that was permanently deleted was (true) or was not (false) a delete marker before deletion. In a simple DELETE, this header indicates whether (true) or not (false) the current version of the object is a delete marker.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectResponse.Builder versionId​(String versionId)
+            Description: Returns the version ID of the delete marker created as a result of the DELETE operation.
+            Parameters:
+              - versionId - Returns the version ID of the delete marker created as a result of the DELETE operation.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Interface: DeleteObjectsRequest.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - DeleteObjectsRequest.Builder bucket​(String bucket)
+            Description: The bucket name containing the objects to delete.
+            Parameters:
+              - bucket - The bucket name containing the objects to delete.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectsRequest.Builder delete​(Delete delete)
+            Description: Container for the request.
+            Parameters:
+              - delete - Container for the request.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Class: Delete
+        Description: Container for the objects to delete.
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - Delete.Builder builder()
+          - List<ObjectIdentifier> objects()
+            Description: The object to delete.
+            Parameters: N/A
+            Returns: The object to delete.
+
+      Interface: DeleteObjectsResponse.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - DeleteObjectsResponse.Builder deleted​(Collection<DeletedObject> deleted)
+            Description: Container element for a successful delete. It identifies a collection of objects that was successfully deleted.
+            Parameters:
+              - deleted - Container element for a successful delete. It identifies a collection of objects that was successfully deleted.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectsResponse.Builder deleted​(DeletedObject... deleted)
+            Description: Container element for a successful delete. It identifies the object that was successfully deleted.
+            Parameters:
+              - deleted - Container element for a successful delete. It identifies the object that was successfully deleted.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectsResponse.Builder errors​(Collection<S3Error> errors)
+            Description: Container for a failed delete action that describes the object that Amazon S3 attempted to delete and the error it encountered.
+            Parameters:
+              - errors - Container for a failed delete action that describes the object that Amazon S3 attempted to delete and the error it encountered.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - DeleteObjectsResponse.Builder errors​(S3Error... errors)
+            Description: Container for a failed delete action that describes the object that Amazon S3 attempted to delete and the error it encountered.
+            Parameters:
+              - errors - Container for a failed delete action that describes the object that Amazon S3 attempted to delete and the error it encountered.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Class: DeletedObject
+        Description: Information about the deleted object.
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - Boolean deleteMarker()
+            Description: Indicates whether the specified object version that was permanently deleted was (true) or was not (false) a delete marker before deletion. In a simple DELETE, this header indicates whether (true) or not (false) the current version of the object is a delete marker.
+            Parameters: N/A
+            Returns: Indicates whether the specified object version that was permanently deleted was (true) or was not (false) a delete marker before deletion. In a simple DELETE, this header indicates whether (true) or not (false) the current version of the object is a delete marker.
+          - String key()
+            Description: The name of the deleted object.
+            Parameters: N/A
+            Returns: The name of the deleted object.
+          - String versionId()
+            Description: This functionality is not supported for directory buckets.
+            Parameters: N/A
+            Returns: This functionality is not supported for directory buckets.
+
+      Class: BlobBatchClient
+        Description: This class provides a client that contains all operations that apply to Azure Storage Blob batching.This client offers the ability to delete and set access tier on multiple blobs at once and to submit a BlobBatch.
+        Package: com.azure.storage.blob.batch
+        Methods:
+          - PagedIterable> deleteBlobs(List blobUrls, DeleteSnapshotsOptionType deleteOptions)
+            Description: Delete multiple blobs in a single request to the service.
+            Parameters:
+              - blobUrls - Urls of the blobs to delete. Blob names must be encoded to UTF-8.
+              - deleteOptions - The deletion option for all blobs.
+            Returns: The status of each delete operation.
+
+      Enum: DeleteSnapshotsOptionType
+        Package: com.azure.storage.blob.models
+        Description: Defines values for DeleteSnapshotsOptionType.
+        Fields:
+          - INCLUDE
+          - ONLY
+
+      Class: BlobClientBase
+        Description: This class provides a client that contains all operations that apply to any blob type.
+        Note: `The package of `BlobClient` is com.azure.storage.blob and the package of `BlobClientBase` is com.azure.storage.blob.specialized, don't make mistake here.
+        Package: com.azure.storage.blob.specialized
+        Methods:
+          - void delete()
+            Description: Deletes the specified blob or snapshot. To delete a blob with its snapshots use deleteWithResponse(DeleteSnapshotsOptionType deleteBlobSnapshotOptions, BlobRequestConditions requestConditions, Duration timeout, Context context) and set DeleteSnapshotsOptionType to INCLUDE.
+            Parameters: N/A
+            Returns: N/A
+          - public boolean deleteIfExists()
+            Description: Deletes the specified blob or snapshot if it exists. To delete a blob with its snapshots use deleteIfExistsWithResponse(DeleteSnapshotsOptionType deleteBlobSnapshotOptions, BlobRequestConditions requestConditions, Duration timeout, Context context) and set DeleteSnapshotsOptionType to INCLUDE.
+            Parameters: N/A
+            Returns: true if delete succeeds, or false if blob does not exist.

@@ -1,0 +1,104 @@
+name: 'Migrate S3client restoreObject to Azure Blob Storage blob copy'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    RestoreObjectRequest|RestoreObjectResponse
+steps:
+  - description: "Migrate s3client with restoreObject API to Azure Blob Storage blob copy"
+    type: "instruction"
+    content: |
+      Your task to to migrate a java file from using amazon s3 API to Azure Storage Blob API while achieving the same functionality. The related API is listed below for your reference. You can tell whether it's an aws or Azure API from the package name.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: RestoreObjectRequest.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+        - RestoreObjectRequest.Builder bucket​(String bucket)
+            Description: The bucket name containing the object to restore.
+            Parameters:
+                - bucket - The bucket name containing the object to restore.
+            Retures: Returns a reference to this object so that method calls can be chained together.
+        - RestoreObjectRequest.Builder key​(String key)
+            Description: Object key for which the action was initiated.
+            Parameters:
+                - key - Object key for which the action was initiated.
+            Retures: Returns a reference to this object so that method calls can be chained together.
+        - RestoreObjectRequest.Builder versionId​(String versionId)
+            Description: VersionId used to reference a specific version of the object.
+            Parameters:
+                - versionId  - VersionId used to reference a specific version of the object.
+            Retures: Returns a reference to this object so that method calls can be chained together.
+
+      Interface: RestoreObjectResponse.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+        - RestoreObjectResponse.Builder requestCharged​(String requestCharged)
+            Description: Sets the value of the RequestCharged property for this object.
+            Parameters:
+                - requestCharged - The new value for the RequestCharged property for this object.
+            Retures: Returns a reference to this object so that method calls can be chained together.
+        - RestoreObjectResponse.Builder restoreOutputPath​(String restoreOutputPath)
+            Description: Indicates the path in the provided S3 output location where Select results will be restored to.
+            Parameters:
+                - restoreOutputPath - Indicates the path in the provided S3 output location where Select results will be restored to.
+            Retures: Returns a reference to this object so that method calls can be chained together.
+        - RestoreObjectResponse.Builder requestCharged​(RequestCharged requestCharged)
+            Description: Sets the value of the RequestCharged property for this object.
+            Parameters:
+                - requestCharged - The new value for the RequestCharged property for this object.
+            Retures: Returns a reference to this object so that method calls can be chained together.
+
+      Enum: RequestCharged
+          Package: software.amazon.awssdk.services.s3.model
+          Description: If present, indicates that the requester was successfully charged for the request.
+          Fields:
+          - REQUESTER
+          - UNKNOWN_TO_SDK_VERSION
+
+      Class: BlobClient
+        Description: This class provides a client that contains generic blob operations for Azure Storage Blobs. Operations allowed by the client are uploading and downloading, copying a blob, retrieving and setting metadata, retrieving and setting HTTP headers, and deleting and un-deleting a blob.
+        Package: com.azure.storage.blob
+        Methods:
+        - SyncPoller beginCopy(BlobBeginCopyOptions options)
+          Description: Copies the data at the source URL to a blob.
+          Parameters:
+            options - BlobBeginCopyOptions
+          Returns: A SyncPoller<T,U> to poll the progress of blob copy operation.
+
+      Class: BlobBeginCopyOptions
+          Description: Extended options that may be passed when beginning a copy operation.
+          Package: com.azure.storage.blob.options
+          Constructors:
+          - public BlobBeginCopyOptions(String sourceUrl)
+            Parameter:
+              - sourceUrl - The source URL to copy from. URLs outside of Azure may only be copied to block blobs.
+          Methods:
+          - BlobBeginCopyOptions setTier(AccessTier tier)
+              Parameters:
+                  - tier - AccessTier for the destination blob.
+              Returns: The updated options.
+          - BlobBeginCopyOptions setRehydratePriority(RehydratePriority rehydratePriority)
+              Parameters:
+                  - rehydratePriority - RehydratePriority for rehydrating the blob.
+              Returns: The updated options.
+
+      Class: RehydratePriority
+          Description: If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High and Standard.
+          Package: com.azure.storage.blob.models
+          Fields:
+              - static final RehydratePriority HIGH
+                  Description: Static value High for RehydratePriority.
+              - static final RehydratePriority STANDARD
+                  Description: Static value Standard for RehydratePriority.
+
+      Class: AccessTier
+          Description: Defines values for AccessTier.
+          Package: com.azure.storage.blob.models
+          Fields:
+              - static final AccessTier ARCHIVE
+              - static final AccessTier COLD
+              - static final AccessTier HOT
+              - static final AccessTier PREMIUM

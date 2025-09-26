@@ -1,0 +1,60 @@
+name: 'Migrate AWS Secrets Manager to Spring Cloud Azure Key Vault Property Source'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: "**/{application,application-*,bootstrap,bootstrap-*}.{properties,yaml,yml}"
+  codePattern: ".*"
+
+steps:
+  - description: "Migrate AWS Secrets Manager to Spring Cloud Azure Key Vault Property Source"
+    type: "instruction"
+    content: |
+      [INTERNAL NOTE: This step must only be executed when the migration strategy is Path 2. If it is not Path 2, do not output anything.]
+      Your task is to migrate property files from using AWS Secrets Manager with Spring to Spring Cloud Azure Key Vault property source-based configuration: Use `spring.cloud.azure.keyvault.secret.property-sources[].endpoint` and `spring.cloud.azure.keyvault.secret.property-sources[].name` to directly get secrets from Azure Keyvault without SecretClient.
+
+      Note:
+      - If AWS Spring Secrets Manager related properties exist in `bootstrap.xxx` files, remove them and add Spring Cloud Azure Key Vault related properties in `application.xxx` files.
+      - Do not directly add Spring Cloud Azure Key Vault related properties in `bootstrap.xxx` files.
+      - Ensure Spring Cloud Azure configurations are placed in `application.xxx` files instead of `bootstrap.xxx`.
+      - IMPORTANT: Do not remove or modify any other AWS service properties that are not specifically related to AWS Secrets Manager. For example, keep properties like `spring.cloud.aws.endpoint`, `spring.cloud.aws.s3.*`, `spring.cloud.aws.sqs.*`, and other AWS service configurations intact.
+      - Only remove properties that are strictly related to AWS Secrets Manager as listed below in the "AWS Spring Secrets Manager related property configuration" section.
+      - If there are general AWS properties that might be shared between services (like `spring.cloud.aws.region.static`), first check if they are used by other AWS services before removing them.
+
+      **AWS Shared Properties:**
+      - spring.cloud.aws.region.static
+      - spring.cloud.aws.region.auto
+      - spring.cloud.aws.credentials.access-key
+      - spring.cloud.aws.credentials.secret-key
+      - spring.cloud.aws.credentials.session-token
+      - spring.cloud.aws.credentials.profile-name
+      - spring.cloud.aws.credentials.instance-profile
+      - spring.cloud.aws.endpoint
+
+      **AWS Spring Secrets Manager related property configuration:**
+      - spring.cloud.aws.secretsmanager.prefix(Prefix indicating first level for every property loaded from the Secrets Manager. Value must start with a forward slash followed by one or more valid path segments or be empty.)
+      - spring.cloud.aws.secretsmanager.defaultContext(Name of the context that defines properties shared across all services)
+      - spring.cloud.aws.secretsmanager.profileSeparator(String that separates an appended profile from the context name. Can only contain dots, dashes, forward slashes, backward slashes and underscores next to alphanumeric characters.)
+      - spring.cloud.aws.secretsmanager.failFast(Indicates if an error while retrieving the secrets should fail starting the application.)
+      - spring.cloud.aws.secretsmanager.name(Name to use when constructing the path for the properties to look up for this specific service.)
+      - spring.cloud.aws.secretsmanager.enabled(Can be used to disable the Secrets Manager Configuration support even though the auto-configuration is on the classpath.)
+      - spring.config.import=aws-secretsmanager:(Importing parameters based on spring.application.name property value for each active profile)
+      - spring.config.import=aws-secretsmanager:secret-key;other-secret-key(Importing secrets by individual keys)
+      - spring.config.import=optional:aws-secretsmanager:secret-key;other-secret-key(With optional application will start even if there is no secret found for specified secret.)
+      - spring.cloud.aws.secretsmanager.endpoint(Configures endpoint used by SecretsManagerClient.)
+      - spring.cloud.aws.secretsmanager.region(Configures region used by SecretsManagerClient.)
+      - spring.cloud.aws.secretsmanager.reload.strategy(The strategy to use when firing a reload (refresh, restart_context))
+      - spring.cloud.aws.secretsmanager.reload.period(The period for verifying changes)
+      - spring.cloud.aws.secretsmanager.reload.max-wait-time-for-restart(The maximum time between the detection of changes in property source and the application context restart when restart_context strategy is used.)
+
+      **Validation steps after migration:**
+      1. Verify that all AWS Secrets Manager specific properties listed above have been properly migrated or removed.
+      2. Confirm that properties for other AWS services (like S3, SQS, SNS, etc.) remain untouched.
+      3. For shared properties like `spring.cloud.aws.region.static`, ensure they are only removed if not being used by other AWS services.
+      4. Make sure the Spring Cloud Azure Key Vault Property Source configuration is added to the application files.
+
+      **Spring Cloud Azure Key Vault Property Source configuration to add:**
+      ```properties
+      # Azure Key Vault Property Source Configuration
+      spring.cloud.azure.keyvault.secret.property-sources[0].endpoint=https://<your-keyvault-name>.vault.azure.net
+      spring.cloud.azure.keyvault.secret.property-sources[0].name=amj-azure-key-vault-source
+      ```

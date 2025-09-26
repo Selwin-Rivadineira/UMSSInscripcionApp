@@ -1,0 +1,106 @@
+name: "JavaMail session to Azure Communication Service email"
+description: "Migrate the JavaMail session API to the Azure Communication Service email API"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    Session.getInstance|Session.getDefaultInstance|MailerBuilder
+
+steps:
+  - description: "Migrate JavaMail session API to Azure Communication Service email"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Java Mail (javax.mail.*) and Simple Java Mail (org.simplejavamail.*) to the Azure Communication Service email API while maintaining the same functionality. Below is a reference to the relevant APIs for your convenience. You can tell whether it's JavaMail or Azure API from the package name.
+      Try replace all references to Java Mail (javax.mail.*) and Simple Java Mail (org.simplejavamail.*) APIs with equivalent Azure Communication Service email APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality. Keep all the irrelevant code/comment unchanged.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Note:
+      1. The session related migration is simple, since by default we use the `AzureDefaultCredential` for authentication in Azure Communication Service email side, so we can just remove the session related code and replace with the EmailClient.
+      2. Endpoint and `AzureDefaultCredential` are two must have parameters when initializing the EmailClient. Make sure you included these two parameters while init an EmailClient.
+      3. EmailClientBuilder & EmailClient has no APIs like `setSenderAddress`, check the SDK provided below carefully.
+      4. The `EmailSendResult` class does not have direct APIs like `EmailSendStatus.SUCCEEDED`. Instead, use the `getStatus()` method of `EmailSendResult` to retrieve the status of the email operation. Compare the result with predefined constants like `EmailSendStatus.SUCCEEDED` to determine the operation's outcome. Below is an example of how to correctly check the email send status:
+         ```java
+         EmailSendResult emailSendResult = emailClient.beginSend(emailMessage).getFinalResult();
+
+         if (emailSendResult.getStatus() == EmailSendStatus.SUCCEEDED) {
+             System.out.println("Email sent successfully.");
+         } else {
+             System.out.println("Failed to send email. Status: " + emailSendResult.getStatus());
+             if (emailSendResult.getError() != null) {
+                 System.out.println("Error details: " + emailSendResult.getError().getMessage());
+             }
+         }
+         ```
+      5. Initialize client as a class-level field or in the constructor, rather than inside individual methods. This ensures the client is reused across multiple method calls.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Class: Session
+        Package: javax.mail.Session
+        Description: The Session class represents a mail session and is not subclassed. It collects together properties and defaults used by the mail API's. A single default session can be shared by multiple applications on the desktop. Unshared sessions can also be created.
+        Methods:
+          - public static Session getInstance(Properties props, Authenticator authenticator)
+            Description: Get a new Session object.
+            Parameters:
+              - props - Properties object that hold relevant properties. It is expected that the client supplies values for the properties listed in Appendix A of the JavaMail spec (particularly mail.store.protocol, mail.transport.protocol, mail.host, mail.user, and mail.from) as the defaults are unlikely to work in all cases.
+              - authenticator - Authenticator object used to call back to the application when a user name and password is needed.
+            Returns: a new Session object
+          - public static Session getDefaultInstance(Properties props, Authenticator authenticator)
+            Description: Get the default Session object. If a default has not yet been setup, a new Session object is created and installed as the default.
+            Parameters:
+              - props - Properties object that hold relevant properties. It is expected that the client supplies values for the properties listed in Appendix A of the JavaMail spec (particularly mail.store.protocol, mail.transport.protocol, mail.host, mail.user, and mail.from) as the defaults are unlikely to work in all cases.
+              - authenticator - Authenticator object used to call back to the application when a user name and password is needed.
+             Returns: a new Session object
+
+      Class: MailerBuilder
+        Description: Entry builder used to start a MailerGenericBuilder and fully configure a Mailer.
+        Package: org.simplejavamail.mailer
+        Methods:
+          - public static org.simplejavamail.mailer.internal.MailerFromSessionBuilderImpl usingSession(@NotNull @NotNull jakarta.mail.Session session)
+            Description: Delegates to MailerFromSessionBuilderImpl.usingSession(Session).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withTransportStrategy(@NotNull @NotNull org.simplejavamail.api.mailer.config.TransportStrategy transportStrategy)
+            Description: Delegates to MailerRegularBuilder.withTransportStrategy(TransportStrategy).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServer(@Nullable @Nullable String host, @Nullable @Nullable Integer port, @Nullable @Nullable String username, @Nullable @Nullable String password)
+            Description: Delegates to MailerRegularBuilder.withSMTPServer(String, Integer, String, String).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServer(@Nullable @Nullable String host, @Nullable @Nullable Integer port, @Nullable @Nullable String username)
+            Description: Delegates to MailerRegularBuilder.withSMTPServer(String, Integer, String).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServer(@Nullable @Nullable String host, @Nullable @Nullable Integer port)
+            Description: Delegates to MailerRegularBuilder.withSMTPServer(String, Integer).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServerHost(@Nullable @Nullable String host)
+            Description: Delegates to MailerRegularBuilder.withSMTPServerHost(String).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServerPort(@Nullable @Nullable Integer port)
+            Description: Delegates to MailerRegularBuilder.withSMTPServerPort(Integer).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServerUsername(@Nullable @Nullable String username)
+            Description: Delegates to MailerRegularBuilder.withSMTPServerUsername(String).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withSMTPServerPassword(@Nullable @Nullable String password)
+            Description: Delegates to MailerRegularBuilder.withSMTPServerPassword(String).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withDebugLogging(Boolean debugLogging)
+            Description: Delegates to MailerGenericBuilder.withDebugLogging(Boolean)
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withCustomMailer(org.simplejavamail.api.mailer.CustomMailer customMailer)
+            Description: Delegates to MailerGenericBuilder.withCustomMailer(CustomMailer).
+          - public static org.simplejavamail.mailer.internal.MailerRegularBuilderImpl withTransportModeLoggingOnly()
+            Description: Delegates to MailerGenericBuilder.withTransportModeLoggingOnly(Boolean).
+          - public static org.simplejavamail.api.mailer.Mailer buildMailer()
+            Description: Shortcuts to MailerRegularBuilder.buildMailer(). This means that none of the builder methods are used and the configuration completely depends on defaults being configured from property file ("simplejavamail.properties") on the classpath or through programmatic defaults.
+
+      Class: EmailClientBuilder
+        Package: com.azure.communication.email
+        Description: Builder for creating clients of Azure Communication Service Email
+        Methods:
+          - public EmailClientBuilder credential(TokenCredential tokenCredential)
+            Description: Sets the TokenCredential used to authorize requests sent to the service.
+            Parameters:
+              - tokenCredential - TokenCredential used to authorize requests sent to the service.
+            Returns: The updated EmailClientBuilder object.
+          - public EmailClientBuilder credential(AzureKeyCredential azureKeyCredential)
+            Description: Sets the AzureKeyCredential used to authorize requests sent to the service.
+            Parameters:
+              - azureKeyCredential - AzureKeyCredential used to authorize requests sent to the service.
+            Returns: The updated EmailClientBuilder object.
+          - public EmailClientBuilder endpoint(String endpoint)
+            Description: Endpoint of the Azure Communication Service email.
+            Parameters:
+              - endpoint: Endpoint of the Azure Communication Service email.
+            Returns: The updated EmailClientBuilder object.
+          - public EmailClient buildClient()
+            Description: Builds an instance of EmailClient class.
+            Returns: an instance of EmailClient.

@@ -1,0 +1,42 @@
+name: 'Migrate S3client deleteBucket to Azure Blob Storage containerClient.delete'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    DeleteBucketRequest|DeleteBucketResponse
+steps:
+  - description: "Migrate s3client with restoreObject API to Azure Blob Storage blob copy"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: DeleteBucketRequest.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - DeleteBucketRequest.Builder bucket​(String bucket)
+            Description: Specifies the bucket being deleted.
+            Parameters:
+              - bucket - Specifies the bucket being deleted.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Interface: DeleteBucketResponse.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods: No useful methods
+
+      Class: BlobContainerClient
+        Description: Client to a container. It may only be instantiated through a BlobContainerClientBuilder or via the method getBlobContainerClient(String containerName). This class does not hold any state about a particular container but is instead a convenient way of sending off appropriate requests to the resource on the service. It may also be used to construct URLs to blobs. This client contains operations on a container. Operations on a blob are available on BlobClient through getBlobClient(String blobName), and operations on the service are available on BlobServiceClient.
+        Package: com.azure.storage.blob
+        Methods:
+          - void delete()
+            Description: Marks the specified container for deletion. The container and any blobs contained within it are later deleted during garbage collection.
+            Parameters: N/A
+            Returns: N/A
+          - boolean deleteIfExists()
+            Description: Marks the specified container for deletion if it exists. The container and any blobs contained within it are later deleted during garbage collection.
+            Parameters: N/A
+            Returns: true if container is successfully deleted, false if container does not exist.

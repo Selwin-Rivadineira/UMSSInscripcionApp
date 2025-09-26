@@ -1,0 +1,109 @@
+name: 'Migrate configuration properties from Oracle to PostgreSQL'
+description: 'Update configuration files for Oracle to PostgreSQL migration'
+
+codeLocation:
+  type: textsearch
+  filePattern: "**/*.{yml,yaml,properties}"
+  codePattern: >-
+    oracle|Oracle|1521|ojdbc
+
+steps:
+  - description: "Update configuration properties for Oracle to PostgreSQL migration"
+    type: "instruction"
+    content: |
+
+      Your task is to migrate configuration properties from Oracle database settings to PostgreSQL compatibility.
+
+      Follow these steps:
+      1. Review the checklist items below in sequence
+      2. Apply each relevant modification to the configuration file
+      3. For each change you make, add a comment in the migrated code that includes the check item information. Example:
+        ```properties
+        # Migrated from Oracle to PostgreSQL according to property check item 1: Check item 1. Change JDBC URL from Oracle to PostgreSQL.
+        ```
+
+      # Check list
+
+      Property check item 0: Don't modify the content if it's obviously not related to Oracle. For example: these properties are oracle specific:
+         - oracle.jdbc
+         - ojdbc
+         - hibernate.dialect=org.hibernate.dialect.OracleDialect
+         - database.port=1521
+         - spring.datasource.url=jdbc:oracle
+         - spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+         - SELECT 1 FROM DUAL
+
+      Property check item 1: Change JDBC URL from Oracle to PostgreSQL.
+        - Standard JDBC URL
+        ```properties
+          # Before migration (Oracle)
+          spring.datasource.url=jdbc:oracle:thin:@localhost:1521:ORCL
+          # After migration (PostgreSQL)
+          spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
+          ```
+
+        - H2 Database in Compatibility Mode
+          ```properties
+          # Before migration (H2 in Oracle Compatibility Mode)
+          spring.datasource.url=jdbc:h2:~/test_oracle;MODE=Oracle
+          # After migration (H2 in PostgreSQL Compatibility Mode)
+          spring.datasource.url=jdbc:h2:~/test_postgres;MODE=PostgreSQL
+          ```
+
+      Property check item 2: Replace Oracle JDBC driver class with PostgreSQL driver class.
+        ```properties
+        # Before migration (Oracle)
+        spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+
+        # After migration (PostgreSQL)
+        spring.datasource.driver-class-name=org.postgresql.Driver
+        ```
+
+      Property check item 3: Change Hibernate dialect from Oracle to PostgreSQL.
+        ```properties
+        # Before migration (Oracle)
+        spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.OracleDialect
+
+        # After migration (PostgreSQL)
+        spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+        ```
+
+      Property check item 4: If port property is Oracle specific, then replace with PostgreSQL equivalents.
+        ```properties
+        # Before migration (Oracle)
+        database.port=1521
+
+        # After migration (PostgreSQL)
+        database.port=5432
+        ```
+
+      Property check item 5: Change username and password to environment variable placeholder.
+        ```properties
+        # Before migration (Oracle)
+        spring.datasource.username=original-username
+        spring.datasource.password=original-password
+
+        # After migration (PostgreSQL)
+        spring.datasource.username=${POSTGRES_USERNAME}
+        spring.datasource.password=${POSTGRES_PASSWORD}
+        ```
+
+      Property check item 6: If schema property is Oracle specific, then replace with PostgreSQL equivalents.
+        ```properties
+        # Before migration (Oracle)
+        spring.jpa.properties.hibernate.default_schema=HR
+
+        # After migration (PostgreSQL)
+        spring.jpa.properties.hibernate.default_schema=public
+        ```
+
+      Property check item 7: If other Oracle-specific properties exists, then replace with PostgreSQL equivalents.
+        ```properties
+        # Before migration (Oracle)
+        spring.datasource.validationQuery=SELECT 1 FROM DUAL
+
+        # After migration (PostgreSQL)
+        spring.datasource.validationQuery=SELECT 1
+        ```
+
+      Property check item 9999: Migrate all other Oracle-specific content to PostgreSQL. For each line, carefully verify whether it uses Oracle-only features.

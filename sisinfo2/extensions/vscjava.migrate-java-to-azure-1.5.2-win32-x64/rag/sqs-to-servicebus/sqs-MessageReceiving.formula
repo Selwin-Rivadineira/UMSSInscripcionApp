@@ -1,0 +1,358 @@
+name: "Migrate AWS Simple Queue Service Message Receiving Operations"
+description: "Migrate AWS Simple Queue Service (SQS) message receiving operations to Azure Service Bus"
+
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: "ReceiveMessageRequest|ReceiveMessageResult|ReceiveMessageResponse|DeleteMessageRequest|AmazonSQS"
+
+steps:
+  - description: "Migrate AWS Simple Queue Service message receiving operations to Azure Service Bus"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that uses AWS Simple Queue Service message receiving operations to Azure Service Bus message receiving operations while maintaining the same functionality.
+
+      Important guidelines:
+
+      1. Message Receiving Operations:
+         - For AWS SDK v1 (com.amazonaws.services.sqs), replace receiveMessage operations with Azure ServiceBusReceiverClient receiveMessages operations
+         - For AWS SDK v2 (software.amazon.awssdk.services.sqs), replace receiveMessage operations with Azure ServiceBusReceiverClient receiveMessages operations
+         - AWS Simple Queue Service uses explicit message deletion, while Azure Service Bus can use either auto-complete mode or explicit completion
+
+      2. Receiving Messages:
+         - Example of AWS SQS v1 message receiving to replace:
+           ```java
+           // Using direct method
+           ReceiveMessageResult result = sqsClient.receiveMessage(queueUrl);
+           List<Message> messages = result.getMessages();
+
+           // Using request object with options
+           ReceiveMessageRequest receiveRequest = new ReceiveMessageRequest()
+               .withQueueUrl(queueUrl)
+               .withMaxNumberOfMessages(10)
+               .withWaitTimeSeconds(20)
+               .withVisibilityTimeout(30)
+               .withMessageAttributeNames("All");
+
+           ReceiveMessageResult result = sqsClient.receiveMessage(receiveRequest);
+           List<Message> messages = result.getMessages();
+           ```
+
+         - Example of AWS SQS v2 message receiving to replace:
+           ```java
+           // Using builder pattern
+           ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
+               .queueUrl(queueUrl)
+               .maxNumberOfMessages(10)
+               .waitTimeSeconds(20)
+               .visibilityTimeout(30)
+               .messageAttributeNames("All")
+               .build());
+
+           List<Message> messages = response.messages();
+           ```
+
+         - Azure Service Bus replacement:
+           ```java
+           // Create receiver with specific options
+           ServiceBusReceiverClient receiver = new ServiceBusClientBuilder()
+               .fullyQualifiedNamespace("your-namespace.servicebus.windows.net")
+               .credential(new DefaultAzureCredentialBuilder().build())
+               .receiver()
+               .queueName(queueName)
+               .buildClient();
+
+           // Receive messages with timeout
+           IterableStream<ServiceBusReceivedMessage> messages = receiver.receiveMessages(10, Duration.ofSeconds(20));
+
+           // Process each received message
+           for (ServiceBusReceivedMessage message : messages) {
+               // Access message body and properties
+               String body = message.getBody().toString();
+               Map<String, Object> properties = message.getApplicationProperties();
+
+               // Process the message...
+
+               // Complete the message (equivalent to SQS deleteMessage)
+               receiver.complete(message);
+           }
+           ```
+
+      3. Message Deletion/Completion:
+         - Example of AWS SQS v1 message deletion to replace:
+           ```java
+           // Using direct method
+           sqsClient.deleteMessage(queueUrl, message.getReceiptHandle());
+
+           // Using request object
+           DeleteMessageRequest deleteRequest = new DeleteMessageRequest()
+               .withQueueUrl(queueUrl)
+               .withReceiptHandle(message.getReceiptHandle());
+           sqsClient.deleteMessage(deleteRequest);
+           ```
+
+         - Example of AWS SQS v2 message deletion to replace:
+           ```java
+           sqsClient.deleteMessage(DeleteMessageRequest.builder()
+               .queueUrl(queueUrl)
+               .receiptHandle(message.receiptHandle())
+               .build());
+           ```
+
+         - Azure Service Bus replacement:
+           ```java
+           // Complete a message (equivalent to SQS deleteMessage)
+           receiver.complete(message);
+           ```
+
+      4. Message Attributes Access:
+         - AWS SQS v1 message attributes access to replace:
+           ```java
+           Map<String, MessageAttributeValue> attributes = message.getMessageAttributes();
+           String attributeValue = attributes.get("AttributeName").getStringValue();
+           ```
+
+         - AWS SQS v2 message attributes access to replace:
+           ```java
+           Map<String, MessageAttributeValue> attributes = message.messageAttributes();
+           String attributeValue = attributes.get("AttributeName").stringValue();
+           ```
+
+         - Azure Service Bus replacement:
+           ```java
+           Map<String, Object> properties = message.getApplicationProperties();
+           String attributeValue = (String) properties.get("AttributeName");
+           ```
+
+      5. Import Cleanup:
+         - Remove all AWS SQS-related imports after migration:
+           - All imports from packages starting with 'com.amazonaws.services.sqs'
+           - All imports from packages starting with 'software.amazon.awssdk.services.sqs'
+         - Add required Azure Service Bus imports:
+           - com.azure.messaging.servicebus.ServiceBusReceiverClient
+           - com.azure.messaging.servicebus.ServiceBusReceivedMessage
+           - com.azure.core.util.IterableStream
+           - java.time.Duration
+
+      Below are the APIs provided for your reference:
+
+      Interface: AmazonSQS
+        Package: com.amazonaws.services.sqs
+        Methods:
+          - receiveMessage(String queueUrl)
+            Description: Retrieves one or more messages from the specified queue.
+            Parameters:
+              - queueUrl: The URL of the Amazon SQS queue from which messages are retrieved
+            Returns: ReceiveMessageResult
+          - receiveMessage(ReceiveMessageRequest request)
+            Description: Retrieves one or more messages from the specified queue with additional options.
+            Parameters:
+              - request: Container for the necessary parameters to execute the ReceiveMessage operation
+            Returns: ReceiveMessageResult
+          - deleteMessage(String queueUrl, String receiptHandle)
+            Description: Deletes the specified message from the specified queue.
+            Parameters:
+              - queueUrl: The URL of the Amazon SQS queue from which the message is deleted
+              - receiptHandle: The receipt handle associated with the message
+            Returns: void
+          - deleteMessage(DeleteMessageRequest request)
+            Description: Deletes the specified message from the specified queue.
+            Parameters:
+              - request: Container for the necessary parameters to execute the DeleteMessage operation
+            Returns: void
+          - changeMessageVisibility(String queueUrl, String receiptHandle, Integer visibilityTimeout)
+            Description: Changes the visibility timeout of a specified message in a queue.
+            Parameters:
+              - queueUrl: The URL of the Amazon SQS queue
+              - receiptHandle: The receipt handle associated with the message
+              - visibilityTimeout: The new value for the message's visibility timeout (in seconds)
+            Returns: void
+
+      Class: ReceiveMessageRequest
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - withQueueUrl(String queueUrl)
+            Description: Sets the URL of the Amazon SQS queue from which messages are received.
+            Parameters:
+              - queueUrl: The URL of the queue
+            Returns: ReceiveMessageRequest
+          - withMaxNumberOfMessages(Integer maxNumberOfMessages)
+            Description: Sets the maximum number of messages to return (1-10).
+            Parameters:
+              - maxNumberOfMessages: Maximum number of messages to receive
+            Returns: ReceiveMessageRequest
+          - withWaitTimeSeconds(Integer waitTimeSeconds)
+            Description: Sets the duration (in seconds) for which the call waits for a message to arrive (long polling).
+            Parameters:
+              - waitTimeSeconds: Time to wait in seconds (0-20)
+            Returns: ReceiveMessageRequest
+          - withVisibilityTimeout(Integer visibilityTimeout)
+            Description: Sets the duration (in seconds) that the received messages are hidden from subsequent retrieve requests.
+            Parameters:
+              - visibilityTimeout: Visibility timeout in seconds
+            Returns: ReceiveMessageRequest
+          - withMessageAttributeNames(Collection<String> messageAttributeNames)
+            Description: Sets the list of message attribute names to retrieve.
+            Parameters:
+              - messageAttributeNames: List of attribute names to retrieve
+            Returns: ReceiveMessageRequest
+
+      Class: ReceiveMessageResult
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - getMessages()
+            Description: Gets the list of Message objects retrieved from the queue.
+            Returns: List<Message>
+
+      Class: Message (AWS SQS v1)
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - getReceiptHandle()
+            Description: Gets the receipt handle associated with this message.
+            Returns: String
+          - getBody()
+            Description: Gets the message body.
+            Returns: String
+          - getMessageAttributes()
+            Description: Gets the message attributes for this message.
+            Returns: Map<String, MessageAttributeValue>
+          - getMessageId()
+            Description: Gets the unique identifier for this message.
+            Returns: String
+
+      Class: DeleteMessageRequest
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - withQueueUrl(String queueUrl)
+            Description: Sets the URL of the Amazon SQS queue from which the message is deleted.
+            Parameters:
+              - queueUrl: The URL of the queue
+            Returns: DeleteMessageRequest
+          - withReceiptHandle(String receiptHandle)
+            Description: Sets the receipt handle associated with the message to delete.
+            Parameters:
+              - receiptHandle: The receipt handle for the message
+            Returns: DeleteMessageRequest
+
+      Class: SqsClient (v2)
+        Package: software.amazon.awssdk.services.sqs
+        Methods:
+          - receiveMessage(ReceiveMessageRequest request)
+            Description: Retrieves one or more messages from the specified queue.
+            Parameters:
+              - request: Request object containing parameters for receiving messages
+            Returns: ReceiveMessageResponse
+          - deleteMessage(DeleteMessageRequest request)
+            Description: Deletes the specified message from the specified queue.
+            Parameters:
+              - request: Request object containing parameters for deleting a message
+            Returns: DeleteMessageResponse
+          - changeMessageVisibility(ChangeMessageVisibilityRequest request)
+            Description: Changes the visibility timeout of a specified message in a queue.
+            Parameters:
+              - request: Request object containing parameters for changing message visibility
+            Returns: ChangeMessageVisibilityResponse
+
+      Class: ReceiveMessageRequest.Builder (v2)
+        Package: software.amazon.awssdk.services.sqs
+        Methods:
+          - queueUrl(String queueUrl)
+            Description: Sets the URL of the Amazon SQS queue from which messages are received.
+            Parameters:
+              - queueUrl: The URL of the queue
+            Returns: ReceiveMessageRequest.Builder
+          - maxNumberOfMessages(Integer maxMessages)
+            Description: Sets the maximum number of messages to return.
+            Parameters:
+              - maxMessages: Maximum number of messages to receive (1-10)
+            Returns: ReceiveMessageRequest.Builder
+          - waitTimeSeconds(Integer waitTime)
+            Description: Sets the duration (in seconds) for which the call waits for a message to arrive (long polling).
+            Parameters:
+              - waitTime: Time to wait in seconds (0-20)
+            Returns: ReceiveMessageRequest.Builder
+          - visibilityTimeout(Integer timeout)
+            Description: Sets the visibility timeout for the received messages.
+            Parameters:
+              - timeout: Visibility timeout in seconds
+            Returns: ReceiveMessageRequest.Builder
+          - build()
+            Description: Builds the ReceiveMessageRequest object.
+            Returns: ReceiveMessageRequest
+
+      Class: ServiceBusReceiverClient
+        Package: com.azure.messaging.servicebus
+        Methods:
+          - receiveMessages(int maxMessages)
+            Description: Receives a batch of messages from the Service Bus entity.
+            Parameters:
+              - maxMessages: Maximum number of messages to receive
+            Returns: IterableStream<ServiceBusReceivedMessage>
+          - receiveMessages(int maxMessages, Duration maxWaitTime)
+            Description: Receives a batch of messages from the Service Bus entity with a given timeout.
+            Parameters:
+              - maxMessages: Maximum number of messages to receive
+              - maxWaitTime: Maximum time to wait for receiving messages
+            Returns: IterableStream<ServiceBusReceivedMessage>
+          - peekMessages(int maxMessages)
+            Description: Peeks a batch of messages from the Service Bus entity.
+            Parameters:
+              - maxMessages: Maximum number of messages to peek
+            Returns: IterableStream<ServiceBusReceivedMessage>
+          - complete(ServiceBusReceivedMessage message)
+            Description: Completes a message, deleting it from the Service Bus entity.
+            Parameters:
+              - message: Message to be completed
+            Returns: void
+          - abandon(ServiceBusReceivedMessage message)
+            Description: Abandons a message, making it available again for processing.
+            Parameters:
+              - message: Message to be abandoned
+            Returns: void
+          - defer(ServiceBusReceivedMessage message)
+            Description: Defers a message, moving it to the deferred subqueue.
+            Parameters:
+              - message: Message to be deferred
+            Returns: void
+          - deadLetter(ServiceBusReceivedMessage message)
+            Description: Moves a message to the dead-letter subqueue.
+            Parameters:
+              - message: Message to be dead-lettered
+            Returns: void
+
+      Class: ServiceBusReceivedMessage
+        Package: com.azure.messaging.servicebus
+        Methods:
+          - getBody()
+            Description: Gets the content of the service bus message.
+            Returns: BinaryData
+          - getApplicationProperties()
+            Description: Gets the application properties from the message.
+            Returns: Map<String, Object>
+          - getMessageId()
+            Description: Gets the unique identifier of the message.
+            Returns: String
+          - getSubject()
+            Description: Gets the subject for the message.
+            Returns: String
+          - getCorrelationId()
+            Description: Gets the correlation ID of the message.
+            Returns: String
+          - getSequenceNumber()
+            Description: Gets the sequence number of the message.
+            Returns: Long
+          - getEnqueuedTime()
+            Description: Gets the instant at which the message was enqueued.
+            Returns: OffsetDateTime
+
+      Class: IterableStream<T>
+        Package: com.azure.core.util
+        Methods:
+          - stream()
+            Description: Gets the underlying Stream object.
+            Returns: Stream<T>
+          - iterator()
+            Description: Gets an Iterator to iterate over the elements in the stream.
+            Returns: Iterator<T>
+
+      Remember to maintain the same functionality while replacing AWS SQS-specific code with Azure Service Bus code.

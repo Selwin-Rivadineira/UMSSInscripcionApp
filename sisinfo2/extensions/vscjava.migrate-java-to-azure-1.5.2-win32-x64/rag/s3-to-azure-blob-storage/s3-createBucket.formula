@@ -1,0 +1,43 @@
+name: 'Migrate S3client createBucket to Azure Blob Storage containerClient.create'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    CreateBucketRequest|CreateBucketResponse
+steps:
+  - description: "Migrate s3client with restoreObject API to Azure Blob Storage blob copy"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: CreateBucketRequest.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - CreateBucketRequest.Builder bucket​(String bucket)
+            Description: The name of the bucket to create.
+            Parameters:
+              - bucket - The name of the bucket to create.
+            Returns:
+              - Returns a reference to this object so that method calls can be chained together.
+
+      Interface: CreateBucketResponse.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods: No useful methods.
+
+      Class: BlobContainerClient
+        Description: Client to a container. It may only be instantiated through a BlobContainerClientBuilder or via the method getBlobContainerClient(String containerName). This class does not hold any state about a particular container but is instead a convenient way of sending off appropriate requests to the resource on the service. It may also be used to construct URLs to blobs. This client contains operations on a container. Operations on a blob are available on BlobClient through getBlobClient(String blobName), and operations on the service are available on BlobServiceClient.
+        Package: com.azure.storage.blob
+        Methods:
+          - void create()
+            Description: Creates a new container within a storage account. If a container with the same name already exists, the operation fails.
+            Parameters: N/A
+            Returns: N/A
+          - boolean createIfNotExists()
+            Description: Creates a new container within a storage account if it does not exist.
+            Parameters: N/A
+            Returns: true if container is successfully created, false if container already exists.

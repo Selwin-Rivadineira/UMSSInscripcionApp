@@ -1,0 +1,22 @@
+name: 'Add Azure Key Vault dependency'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/{pom.xml,build.gradle,build.gradle.kts}'
+  codePattern: ".*"
+
+steps:
+  - description: "Add Azure Key Vault dependency"
+    type: "instruction"
+    content: |
+      Your task is to add Azure Key Vault dependency in the project build file.
+
+      Azure Key Vault related dependencies:
+        -
+        groupId: com.azure
+        artifactId: azure-security-keyvault-secrets
+        version: 4.9.3
+        -
+        groupId: com.azure
+        artifactId: azure-identity
+        version: 1.15.4

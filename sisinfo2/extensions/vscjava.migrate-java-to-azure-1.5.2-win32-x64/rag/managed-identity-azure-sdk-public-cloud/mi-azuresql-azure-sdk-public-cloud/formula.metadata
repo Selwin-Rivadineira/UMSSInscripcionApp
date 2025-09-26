@@ -1,0 +1,4 @@
+group:
+  id: mi-azuresql-azure-sdk-public-cloud
+  displayName: Azure SQL Managed Identity via Azure SDK for Public Cloud
+  description: Azure SQL Managed Identity via Azure SDK for Public Cloud

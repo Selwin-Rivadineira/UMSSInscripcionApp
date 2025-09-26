@@ -1,0 +1,123 @@
+name: 'Migrate Ehcache cache operations to Azure Cache for Redis'
+description: "Converts Ehcache cache operations (get, put, remove) to Azure Cache for Redis operations"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    cache.get|cache.put|cache.remove|ehcache.get|ehcache.put|ehcache.remove|Element\(|new Element\(
+
+steps:
+  - description: "Migrate Ehcache cache operations to Azure Cache for Redis operations"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that performs Ehcache operations (get, put, remove) to use Azure Cache for Redis operations instead. Follow these detailed instructions to make the transition:
+
+      ## Identifying Ehcache Operations
+      
+      Look for these common Ehcache operation patterns:
+      
+      1. Element creation and manipulation:
+         - Creating elements with `new Element(key, value)`
+         - Setting TTL with `element.setTimeToLive(seconds)`
+      
+      2. Cache operations:
+         - Retrieving cached values with `cache.get(key)` and extracting with `element.getObjectValue()`
+         - Storing values with `cache.put(element)`
+         - Checking existence with `cache.isKeyInCache(key)`
+         - Removing entries with `cache.remove(key)`
+         - Clearing entire cache with `cache.removeAll()`
+      
+      3. Element TTL and expiration operations:
+         - Setting timeouts on individual elements
+         - Using eternal flags
+      
+      ## Replacement Strategy
+      
+      Replace with Redis operations using these guidelines:
+      
+      1. For Spring applications with RedisTemplate:
+         - Replace `cache.put(new Element(key, value))` with `redisTemplate.opsForValue().set(key, value)`
+         - Replace `Element element = cache.get(key); value = element.getObjectValue()` with `value = redisTemplate.opsForValue().get(key)`
+         - Replace `cache.isKeyInCache(key)` with `redisTemplate.hasKey(key)`
+         - Replace `cache.remove(key)` with `redisTemplate.delete(key)`
+         - Replace `cache.removeAll()` with `redisTemplate.delete(redisTemplate.keys("pattern:*"))`
+         - For TTL: use `redisTemplate.opsForValue().set(key, value, duration)` or `redisTemplate.expire(key, duration)`
+      
+      2. For Spring Cache annotation users:
+         - Keep `@Cacheable`, `@CachePut`, and `@CacheEvict` annotations mostly unchanged
+         - Update the cacheManager reference if needed
+         - Update any custom key generators to work with Redis
+      
+      3. For non-Spring applications using Lettuce directly:
+         - Use `commands.set(key, valueJson)` for storing (serialization required)
+         - Use `commands.get(key)` for retrieval (deserialization required)
+         - Use `commands.exists(key)` for checking existence
+         - Use `commands.del(key)` for removal
+         - Use `commands.setex(key, ttl, valueJson)` for TTL setting
+      
+      ## Implementation Considerations
+      
+      - Redis has no direct equivalent to Ehcache Element - use key-value operations
+      - Serialization is critical - ensure proper configuration in RedisTemplate
+      - For complex objects, consider using HashOperations instead of simple key-value
+      - Redis keys should include cache name in pattern: "cacheName:key"
+      - For performance, batch operations when possible (mget, mset)
+      - Use try-with-resources for proper connection management if not using Spring
+      - Utilize Redis's TTL capabilities to replace Ehcache expiration
+      
+      ## JSON Serialization with Redis
+      
+      Since Redis primarily stores data as strings, proper serialization is essential when migrating from Ehcache:
+      
+      1. Jackson-based serialization (recommended for direct Lettuce usage):
+         - Create an ObjectMapper instance: `ObjectMapper objectMapper = new ObjectMapper();`
+         - Serialize objects to JSON strings before storing: `objectMapper.writeValueAsString(object)`
+         - Deserialize JSON strings back to objects: `objectMapper.readValue(jsonString, Class.class)`
+         - For collections or generic types use TypeReference: `objectMapper.readValue(json, new TypeReference<List<User>>(){});`
+         - Consider implementing helper methods for consistent serialization/deserialization
+         - Use ObjectMapper configuration to customize date formats, null handling, and other serialization options
+         - Example workflow:
+           ```
+           // Storing: Java object → Jackson writeValueAsString() → Redis
+           // Retrieving: Redis → Jackson readValue() → Java object
+           ```
+      
+      2. Jackson-based serialization (alternative for direct Lettuce usage):
+         - Create and configure an ObjectMapper instance
+         - Serialize objects to JSON strings before storing in Redis
+         - Deserialize JSON strings back to objects when retrieving
+         - Example workflow:
+           ```
+           // Storing: Java object → JSON string → Redis
+           // Retrieving: Redis → JSON string → Java object
+           ```
+         - Use TypeReference for collections or generic types
+         - Consider serialization performance for high-throughput applications
+      
+      3. Spring RedisTemplate serialization options:
+         - StringRedisSerializer: For keys (almost always the best choice)
+         - Jackson2JsonRedisSerializer: For values (objects) with explicit typing
+         - GenericJackson2JsonRedisSerializer: Simpler setup but includes type info in stored data
+         - JdkSerializationRedisSerializer: Uses Java serialization (legacy option)
+         - Custom serializers for special needs
+      
+      4. Serialization configuration best practices:
+         - Configure proper null handling
+         - Set appropriate date formats for timestamp fields
+         - For polymorphic types, ensure proper type handling configuration
+         - Test serialization roundtrips with complex objects
+         - Use compression for large objects if needed
+         - Create helper classes for consistent serialization/deserialization operations
+         - Implement custom serializers/deserializers for complex types in Jackson
+      
+      5. Advanced serialization techniques:
+         - For complex domain models, consider using Hash structures instead of serializing entire objects
+         - Use Jackson's annotation-based filtering to control which fields are included in serialization
+         - Consider binary serialization formats like Protocol Buffers or MsgPack for performance-critical applications
+         - Implement a serialization helper class with methods like:
+           ```
+           // Helper methods:
+           <T> void set(String key, T object)
+           <T> T get(String key, Class<T> type)
+           <T> T get(String key, TypeReference<T> typeReference)
+           ```

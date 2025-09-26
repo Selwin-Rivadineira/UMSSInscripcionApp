@@ -1,0 +1,25 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "pom.xml",
+      "nested/pom.xml",
+      "build.gradle",
+      "nested/build.gradle"
+    ],
+    "shouldNotMatch": [
+      "Application.java",
+      "application.properties",
+      "config.yaml"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "<artifactId>mysql-connector-java</artifactId>",
+      "    implementation 'com.mysql:mysql-connector-j'"
+    ],
+    "shouldNotMatch": [
+      "<artifactId>mssql-jdbc</artifactId>",
+      "testImplementation 'com.microsoft.sqlserver:mssql-jdbc:10.2.0.jre11'"
+    ]
+  }
+}

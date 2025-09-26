@@ -1,0 +1,157 @@
+name: 'Migrate Ehcache CacheManager implementations to Azure Cache for Redis'
+description: "Converts Ehcache CacheManager code to Redis-compatible cache managers"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    CacheManager|EhCacheCacheManager|SimpleCacheManager|ConcurrentMapCacheManager|extends CacheManager
+
+steps:
+  - description: "Migrate Ehcache CacheManager implementations to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that implements or extends Ehcache's CacheManager to use Redis-compatible cache managers instead.
+      Pay attention that you should only update the specific cache manager code and keep the rest of the file - you cannot replace the whole file. What you return must be a valid, complete Java file.
+      First of all, you should check the dependency file and main function to check whether this app is a spring-app or not then check the specific examples below to take further action.
+      Below are examples of Ehcache CacheManager implementations and their Azure Redis equivalents:
+
+      Ehcache CacheManager implementation examples:
+      ```java
+      // Custom Ehcache CacheManager implementation
+      public class CustomCacheManager extends CacheManager {
+        public CustomCacheManager() {
+          super();
+        }
+        
+        public CustomCacheManager(String configLocation) {
+          super(configLocation);
+        }
+        
+        // Custom methods...
+      }
+      
+      // Or a Spring-specific implementation
+      public class CustomEhCacheCacheManager extends EhCacheCacheManager {
+        public CustomEhCacheCacheManager(net.sf.ehcache.CacheManager cacheManager) {
+          super(cacheManager);
+        }
+        
+        @Override
+        protected Cache getMissingCache(String name) {
+          // Custom implementation
+        }
+      }
+      ```
+
+      Azure Cache for Redis CacheManager implementation examples using Lettuce:
+      ```java
+      // SPRING BOOT APPLICATIONS
+      // Create the Redis connection factory first (required for cache manager)
+      @Bean
+      public LettuceConnectionFactory redisConnectionFactory(
+          @Value("${spring.redis.host}") String host,
+          @Value("${spring.redis.port:6380}") int port,
+          @Value("${spring.redis.password}") String password) {
+        
+        RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
+        redisConfig.setHostName(host);
+        redisConfig.setPort(port);
+        redisConfig.setPassword(password);
+        
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+            .useSsl()  // Required for Azure Redis Cache
+            .build();
+        
+        return new LettuceConnectionFactory(redisConfig, clientConfig);
+      }
+      
+      // Custom Redis CacheManager
+      @Bean
+      public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(30))
+            .disableCachingNullValues();
+        
+        // For specific cache configurations
+        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+        cacheConfigs.put("userCache", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)));
+        cacheConfigs.put("productCache", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(60)));
+        
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigs)
+            .build();
+      }
+      
+      // NON-SPRING APPLICATIONS
+      // For applications not using Spring, use a direct Lettuce Redis client
+      // Import required classes
+      import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+      import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+      import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+      import org.springframework.data.redis.core.RedisTemplate;
+      import org.springframework.data.redis.core.StringRedisTemplate;
+      import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+      import org.springframework.data.redis.serializer.StringRedisSerializer;
+      
+      public class RedisCacheManager {
+          private StringRedisTemplate stringRedisTemplate;
+          private RedisTemplate<String, Object> objectRedisTemplate;
+          
+          // Using singleton pattern for manager
+          private static RedisCacheManager instance;
+          
+          public static synchronized RedisCacheManager getInstance(String host, int port, String password) {
+              if (instance == null) {
+                  instance = new RedisCacheManager(host, port, password);
+              }
+              return instance;
+          }
+          
+          private RedisCacheManager(String host, int port, String password) {
+              // Create a standalone configuration for Spring Data Redis
+              RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
+              redisConfig.setHostName(host);
+              redisConfig.setPort(port);
+              redisConfig.setPassword(password);
+      
+              LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+                  .useSsl()  // Required for Azure Redis Cache
+                  .build();
+      
+              LettuceConnectionFactory factory = new LettuceConnectionFactory(redisConfig, clientConfig);
+              factory.afterPropertiesSet();
+      
+              // Initialize RedisTemplate for string cache
+              stringRedisTemplate = new StringRedisTemplate();
+              stringRedisTemplate.setConnectionFactory(factory);
+              stringRedisTemplate.afterPropertiesSet();
+      
+              // Initialize RedisTemplate for object cache
+              objectRedisTemplate = new RedisTemplate<>();
+              objectRedisTemplate.setConnectionFactory(factory);
+              
+              // This is crucial - set serializers for the objectRedisTemplate
+              objectRedisTemplate.setKeySerializer(new StringRedisSerializer());
+              objectRedisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+              objectRedisTemplate.setHashKeySerializer(new StringRedisSerializer());
+              objectRedisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+              
+              // Initialize the template
+              objectRedisTemplate.afterPropertiesSet();
+          }
+      }
+      ```
+
+      Implementation notes:
+      1. Replace inheritance from Ehcache's CacheManager with Spring's RedisCacheManager
+      2. Use Lettuce as the Redis client via LettuceConnectionFactory
+      3. Both RedisCacheManager and LettuceConnectionFactory can only be initialized as a bean once! If the RedisTemplate has multiple generic types, you need to use @Qualifier to difference the beans with different names.
+      4. Always configure SSL (required for Azure Redis Cache) and use port 6380
+      5. Convert Ehcache TTL settings to Redis cache TTL via RedisCacheConfiguration's entryTtl method
+      6. For different cache regions with varied settings, use the withInitialCacheConfigurations method
+      7. Make sure to properly configure serialization for Redis cache entries
+      8. Don't forget to add proper imports for LettuceClientConfiguration, LettuceConnectionFactory, and RedisStandaloneConfiguration
+      9. Remember that useSsl() is required when connecting to Azure Redis Cache
+      10. Always call afterPropertiesSet() on both factory and template instances
+      11. Set serializers for templates when caching object types to ensure proper serialization/deserialization

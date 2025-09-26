@@ -1,0 +1,36 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "MessageConverterConfig.java",
+      "src/main/java/com/example/config/RabbitConfig.java",
+      "nested/folder/ConverterSetup.java",
+      "com/myapp/messaging/MessageHandler.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "MessageConverter.js",
+      "src/main/resources/application.properties",
+      "src/main/kotlin/RabbitConfig.kt",
+      "config/rabbitmq.yml",
+      "MessageConverter.class"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;",
+      "import org.springframework.amqp.support.converter.MessageConverter;",
+      "private org.springframework.amqp.support.converter.SimpleMessageConverter converter;",
+      "ObjectMapper mapper = new ObjectMapper();\nreturn new org.springframework.amqp.support.converter.Jackson2JsonMessageConverter(mapper);",
+      "import org.springframework.amqp.support.converter.*;",
+      "org.springframework.amqp.support.converter.ContentTypeDelegatingMessageConverter converter = new ContentTypeDelegatingMessageConverter();"
+    ],
+    "shouldNotMatch": [
+      "import org.springframework.jms.support.converter.MessageConverter;",
+      "import com.azure.spring.messaging.servicebus.implementation.support.converter.ServiceBusMessageConverter;",
+      "ServiceBusMessageConverter converter = new ServiceBusMessageConverter(mapper);",
+      "import org.springframework.amqp.core.Message;",
+      "import org.springframework.amqp.rabbit.connection.ConnectionFactory;",
+      "String rabbitConnectionString = \"amqp://localhost:5672\";"
+    ]
+  }
+}

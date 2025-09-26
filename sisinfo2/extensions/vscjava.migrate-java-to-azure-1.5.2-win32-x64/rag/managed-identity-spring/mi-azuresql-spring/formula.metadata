@@ -1,0 +1,4 @@
+group:
+  id: mi-azuresql-spring
+  displayName: Azure SQL Managed Identity via Spring
+  description: Azure SQL Managed Identity via Spring

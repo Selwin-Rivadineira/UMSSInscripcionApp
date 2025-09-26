@@ -1,0 +1,24 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "ExampleClass.java",
+      "nested/ExampleClass.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "Session session = Session.getInstance(props, authenticator);",
+      "Session session = Session.getDefaultInstance(props, authenticator);",
+      "MailerBuilder.usingSession(session);"
+    ],
+    "shouldNotMatch": [
+      "String unrelated = \"UnrelatedClass\";",
+      "EmailClient emailClient = new EmailClientBuilder().buildClient();"
+    ]
+  }
+}

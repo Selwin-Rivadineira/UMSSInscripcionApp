@@ -1,0 +1,27 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "EvictionPolicyConfig.java",
+      "nested/EvictionPolicyConfig.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "cacheConfig.memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);",
+      "cacheConfig.memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LFU);",
+      "cacheConfig.memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.FIFO);",
+      "cacheConfig.maxElementsInMemory(1000);",
+      "cacheConfig.maxBytesLocalHeap(100, MemoryUnit.MEGABYTES);"
+    ],
+    "shouldNotMatch": [
+      "cacheConfig.unrelatedMethod();",
+      "String unrelated = \"UnrelatedClass\";",
+      "cacheConfig.maxBytesLocalDisk(100, MemoryUnit.MEGABYTES);"
+    ]
+  }
+}

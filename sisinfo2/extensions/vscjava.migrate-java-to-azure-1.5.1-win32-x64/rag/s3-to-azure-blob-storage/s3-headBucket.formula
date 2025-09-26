@@ -1,0 +1,54 @@
+name: 'Migrate S3client headBucket to Azure Blob Storage'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    headBucket|HeadBucketRequest|HeadBucketResponse
+
+steps:
+  - description: "Migrate s3client with headBucket API to Azure Blob Storage BlobContainerClient.getProperties()"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: S3Client
+        Package: software.amazon.awssdk.services.s3
+        Methods:
+        - default HeadBucketResponse headBucket​(HeadBucketRequest headBucketRequest) throws NoSuchBucketException, AwsServiceException, SdkClientException, S3Exception
+          Description: You can use this operation to determine if a bucket exists and if you have permission to access it. The action returns a 200 OK if the bucket exists and you have permission to access it. If the bucket does not exist or you do not have permission to access it, the HEAD request returns a generic 400 Bad Request, 403 Forbidden or 404 Not Found code. A message body is not included, so you cannot determine the exception beyond these HTTP response codes. You must make requests for this API operation to the Zonal endpoint. These endpoints support virtual-hosted-style requests in the format https://bucket-name.s3express-zone-id.region-code.amazonaws.com. Path-style requests are not supported.
+          Parameters:
+          - headBucketRequest:
+          Returns: Result of the HeadBucket operation returned by the service.
+
+      Class: HeadBucketRequest
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+        - public final String bucket()
+          Description: The bucket name.
+          Returns: The bucket name.
+
+      Class: HeadBucketResponse
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+        - public final String bucketRegion()
+          Description: The Region that the bucket is located.
+          Returns: The Region that the bucket is located.
+
+      Class BlobContainerClient
+        Package: com.azure.storage.blob
+        Methods:
+        - public BlobContainerProperties getProperties()
+          Description: Returns the container's metadata and system properties.
+          Returns: The container properties.
+        - public Response getPropertiesWithResponse(String leaseId, Duration timeout, Context context)
+          Description: Returns the container's metadata and system properties.
+          Parameters:
+          - leaseId: The lease ID the active lease on the container must match.
+          - timeout: An optional timeout value beyond which a RuntimeException will be raised.
+          -context: Additional context that is passed through the Http pipeline during the service call.
+          Returns: The container properties.

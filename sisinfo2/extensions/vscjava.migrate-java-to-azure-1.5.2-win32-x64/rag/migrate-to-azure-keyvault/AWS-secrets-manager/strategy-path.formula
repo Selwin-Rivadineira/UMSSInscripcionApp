@@ -1,0 +1,41 @@
+name: 'Choose Correct Migration Strategy Path for migrating AWS Secrets Manager to Key Vault'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: ".*"
+  codePattern: ".*"
+
+steps:
+  - description: "Choose Correct Migration Strategy Path"
+    type: "instruction"
+    content: |
+      Determine the appropriate migration strategy for the project.
+      Step 1: Check the dependency files (`pom.xml`, `build.gradle`, or `build.gradle.kts`) to see if any of the following Spring AWS Secrets Manager-related dependencies are present:
+      - 'spring-cloud-starter-aws-secrets-manager-config'
+      - 'spring-cloud-aws-secrets-manager-config'
+      - 'spring-cloud-aws-starter-secrets-manager'
+      - 'spring-cloud-aws-secrets-manager'
+
+      Step 2: Check the codebase for usage of AWS Secrets Manager client classes, such as:
+      - 'SecretsManagerClient'
+      - 'AWSSecretsManager'
+
+      Step 3: Check the codebase for usage of AWS Secrets Manager client builder classes, such as:
+      - 'SecretsManagerClientBuilder'
+      - 'AWSSecretsManagerClientBuilder'
+      - 'SecretsManagerClient.builder()'
+      - 'SecretsManagerClient.create()'
+
+      Based on the above findings, choose **one of the following migration paths**:
+
+      **Migration Path 1: No Spring AWS Secrets Manager-related dependencies**  
+      → Migrate using **Azure Identity** and **Azure Key Vault SDK** directly. No Spring integration is needed.
+
+      **Migration Path 2: Spring AWS Secrets Manager-related dependencies are present, but AWS Secrets Manager client either AWS Secrets Manager client builder codes are not used**  
+      → Migrate using **Spring Cloud Azure Property Source** pattern.
+
+      **Migration Path 3: Spring AWS Secrets Manager-related dependencies are present, AWS Secrets Manager client code is used, but AWS Secrets Manager client builder code is not used**  
+      → Migrate using **Spring Cloud Azure Key Vault Client** pattern.
+
+      **Migration Path 4: Spring AWS Secrets Manager-related dependencies are present, AWS Secrets Manager client code and AWS Secrets Manager client builder codes are used**  
+      → Migrate using **Spring Cloud Azure**, and use Azure's client builder to construct the client explicitly.

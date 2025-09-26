@@ -1,0 +1,12 @@
+group:
+  id: activemq-servicebus
+  displayName: ActiveMQ to Azure Service Bus via Spring JMS
+  description: ActiveMQ to Azure Service Bus via Spring JMS
+tags:
+  - ActiveMQ
+  - Azure Service Bus
+  - Message Broker
+  - Message Queue
+  - Messaging
+  - Spring
+  - Spring JMS

@@ -1,0 +1,27 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "ExampleClass.java",
+      "nested/ExampleClass.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "@EnableCaching",
+      "CacheManager cacheManager",
+      "new EhCacheCacheManager();",
+      "EhCacheManagerFactoryBean factory = new EhCacheManagerFactoryBean();",
+      "net.sf.ehcache.CacheManager ehCacheManager = net.sf.ehcache.CacheManager.newInstance(config);"
+    ],
+    "shouldNotMatch": [
+      "@Configuration",
+      "String unrelated = \"UnrelatedClass\";",
+      "org.apache.activemq.ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory();"
+    ]
+  }
+}

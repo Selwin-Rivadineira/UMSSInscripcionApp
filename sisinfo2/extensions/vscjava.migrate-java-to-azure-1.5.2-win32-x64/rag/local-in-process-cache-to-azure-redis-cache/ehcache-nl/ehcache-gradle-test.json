@@ -1,0 +1,30 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "build.gradle",
+      "nested/build.gradle.kts"
+    ],
+    "shouldNotMatch": [
+      "pom.xml",
+      "src/ExampleClass.java",
+      "README.md"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "implementation 'net.sf.ehcache:ehcache:2.10.6'",
+      "implementation 'net.sf.ehcache:ehcache-core:2.6.11'",
+      "implementation 'org.ehcache:ehcache:3.9.0'",
+      "implementation 'org.springframework.boot:spring-boot-starter-cache'",
+      "implementation(\"net.sf.ehcache:ehcache:2.10.6\")",
+      "implementation(\"net.sf.ehcache:ehcache-core:2.6.11\")",
+      "implementation(\"org.ehcache:ehcache:3.9.0\")",
+      "implementation(\"org.springframework.boot:spring-boot-starter-cache\")"
+    ],
+    "shouldNotMatch": [
+      "implementation 'io.lettuce:lettuce-core:6.3.0'",
+      "implementation(\"io.lettuce:lettuce-core:6.3.0\")",
+      "String unrelated = \"UnrelatedClass\";"
+    ]
+  }
+}

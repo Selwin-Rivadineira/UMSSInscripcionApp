@@ -1,0 +1,4 @@
+group:
+  id: confluent-cloud-kafka
+  displayName: Kafka to Apache Kafka on Confluent Cloud
+  description: Kafka to Apache Kafka on Confluent Cloud

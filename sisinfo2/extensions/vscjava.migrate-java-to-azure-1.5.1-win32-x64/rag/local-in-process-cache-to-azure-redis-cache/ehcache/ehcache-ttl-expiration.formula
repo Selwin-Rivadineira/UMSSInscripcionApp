@@ -1,0 +1,97 @@
+name: 'Migrate Ehcache TTL and expiration configuration to Azure Cache for Redis'
+description: "Converts Ehcache time-to-live and expiration policies to Azure Cache for Redis equivalents"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    timeToLiveSeconds|timeToIdleSeconds|setTimeToLive|setTimeToIdle|eternal=|diskExpiryThreadIntervalSeconds|setEternal
+
+steps:
+  - description: "Migrate Ehcache TTL and expiration configuration to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that configures Ehcache time-to-live (TTL) and expiration policies to use Azure Cache for Redis equivalents.
+      Pay attention that you should only update the specific TTL and expiration configuration code and keep the rest of the file - you cannot replace the whole file. What you return must be a valid, complete Java file.
+
+      Below are examples of Ehcache TTL configurations and their Azure Redis equivalents:
+
+      Ehcache TTL configuration examples:
+      ```java
+      // Programmatic configuration
+      CacheConfiguration cacheConfig = new CacheConfiguration("userCache", 1000)
+          .timeToLiveSeconds(3600)         // 1 hour TTL
+          .timeToIdleSeconds(1800)         // 30 minutes idle time
+          .eternal(false)                  // Cache entries can expire
+          .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+      
+      // Setting TTL on individual cache elements
+      Element element = new Element("user:123", user);
+      element.setTimeToLive(600);         // 10 minutes TTL
+      element.setTimeToIdle(300);         // 5 minutes idle time
+      element.setEternal(false);
+      cache.put(element);
+      ```
+
+      Azure Cache for Redis TTL configuration examples:
+      ```java
+      // Using RedisCacheConfiguration with Spring Boot
+      @Bean
+      public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // Default configuration - matches Ehcache's default cache settings
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofSeconds(120))  // Default TTL
+            .disableCachingNullValues();
+        
+        // Per-cache configuration - matches specific Ehcache settings
+        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+        
+        // Equivalent to Ehcache "userCache" with timeToLiveSeconds(3600)
+        cacheConfigs.put("userCache", RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofSeconds(3600)));
+        
+        // Equivalent to Ehcache "productCache" with timeToLiveSeconds(7200)
+        cacheConfigs.put("productCache", RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofSeconds(7200)));
+        
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigs)
+            .build();
+      }
+      
+      // Setting TTL on individual keys using Jedis
+      try (Jedis jedis = jedisPool.getResource()) {
+        // Equivalent to Element with timeToLive(600)
+        jedis.setex("user:123", 600, userJson);  // Key, TTL in seconds, value
+        
+        // For timeToIdleSeconds (TTI) - refresh TTL on each access
+        // When reading the value
+        String value = jedis.get("user:123");
+        if (value != null) {
+          jedis.expire("user:123", 600);  // Reset TTL on access - mimics timeToIdleSeconds
+        }
+      }
+      
+      // Setting TTL on individual keys using RedisTemplate
+      // Equivalent to Element with timeToLive(600)
+      redisTemplate.opsForValue().set("user:123", user, Duration.ofSeconds(600));
+      
+      // For timeToIdleSeconds (TTI) - refresh TTL on each access
+      // When reading the value
+      User cachedUser = redisTemplate.opsForValue().get("user:123");
+      if (cachedUser != null) {
+        redisTemplate.expire("user:123", Duration.ofSeconds(300));  // Reset TTL to mimic timeToIdle(300)
+      }
+      ```
+
+      Implementation notes:
+      1. Replace Ehcache's timeToLiveSeconds with Redis TTL configurations
+      2. For Ehcache's timeToIdleSeconds (idle time), implement a pattern that mimics this behavior by refreshing the expiration countdown whenever the key is accessed:
+         - When using Jedis: Use `jedis.setex(key, ttlSeconds, value)` for write operations to set both value and TTL, and use `jedis.expire(key, ttlSeconds)` after each read access to reset the TTL countdown
+         - When using RedisTemplate: Use `redisTemplate.opsForValue().set(key, value, Duration.ofSeconds(ttlSeconds))` for write operations to set both value and TTL, and use `redisTemplate.expire(key, Duration.ofSeconds(ttlSeconds))` after each read access to reset the TTL countdown
+      3. Ehcache's "eternal=true" means entries never expire - in Redis, simply don't set an expiration
+      4. Replace Ehcache's individual element TTL settings with Redis key expiration commands
+      5. Ehcache's eviction policies (LRU, LFU, FIFO) map to Redis's maxmemory-policy, which is set in the Redis server configuration
+      6. When using Spring, configure TTL in the RedisCacheConfiguration for each cache
+      7. For Azure Cache for Redis, ensure your cache tier provides enough memory to avoid excessive evictions
+      8. Redis does not have disk persistence like Ehcache - consider using Redis persistence options (RDB or AOF) instead

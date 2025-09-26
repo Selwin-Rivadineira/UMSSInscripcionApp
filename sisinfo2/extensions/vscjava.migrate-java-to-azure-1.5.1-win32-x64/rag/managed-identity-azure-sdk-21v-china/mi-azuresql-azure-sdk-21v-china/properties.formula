@@ -1,0 +1,22 @@
+name: "Add properties for Managed Identity in Azure SQL (China Cloud)"
+description: "Add the Azure Managed Identity client ID properties for Azure SQL in China Cloud."
+codeLocation:
+  type: "textsearch"
+  codePattern: ".*"
+  filePattern: "**/application{,-*}.{yml,yaml,properties}"
+steps:
+  - description: "Add properties for Managed Identity authentication"
+    type: "instruction"
+    content: |
+      Your task is to migrate a configuration file to use managed identity for authentication in Azure SQL instead of a password.
+      If the configuration file is yaml, please ensure the indentation and format is correct and consistent with the rest of the file.
+      Please ensure the formats of keys and values remain consistent with the naming convention of the original ones.
+
+      1. Please add the configuration for the Azure client ID for managed identity.
+        Common naming conventions include AZURE_CLIENT_ID, azure.client.id, azure.identity.client-id.
+        Please apply a naming convention consistent with the style of the context.
+
+      2. Remove the configuration for the password of the **SQL** database:
+        - Removing password segments from JDBC connection strings (typically after the ; symbol)
+        - Removing the password property from the configuration file
+      Note: please do not remove the password property if it is used for other purposes.

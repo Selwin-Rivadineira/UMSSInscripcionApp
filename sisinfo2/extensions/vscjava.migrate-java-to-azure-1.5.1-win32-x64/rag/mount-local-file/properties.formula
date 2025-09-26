@@ -1,0 +1,51 @@
+name: 'Migrate to Azure Mounts - In property file'
+description: 'Migrate local files to Azure Storage mounts - In property file'
+
+codeLocation:
+  type: textsearch
+  filePattern: "**/application{,-*}.{yml,yaml,properties}"
+  codePattern: "(?:^|[^a-zA-Z0-9:]|[^:]//)((?:[a-zA-Z]:(?:\\\\{1,2}|/)(?:[^\"\n\r]*[^\\s\"\n\r])))|(?:^|[^a-zA-Z0-9:]|[^:]//)((?:/(?:home|usr|Users)/(?:[^\"\n\r]*[^\\s\"\n\r])))|(?:^|[ =:\"'])((?:\\.{1,2}(?:/|\\\\)(?:[^\"\n\r]*[^\\s\"\n\r])))"
+
+steps:
+  - description: "Migrate local files to Azure Storage mounts - In property file"
+    type: "instruction"
+    content: |
+      Your task is to update property files by converting local file paths to Azure mounted storage paths.
+
+      ## Problem Context
+      When applications run in the cloud, local file paths are inaccessible. File references must be updated
+      to use Azure Storage mounts to ensure proper functionality in cloud environments.
+
+      ## Identification Guidelines
+      Before making changes, carefully analyze each string to determine if it represents an actual file path:
+      - Look for path patterns: Windows paths (C:\path\to\file), Unix paths (/home/user/file), or relative paths (./file or ../file)
+      - Consider the context: In property files, not all strings with slashes are file paths
+      - DO NOT modify URLs, database url, connection string, username, password, package names, or user identifiers that like a local file path.
+
+      Examples of non-local-file paths (IMPORTANT: DON'T CHANGE THEM):
+      - spring.database.username="/home/test"
+      - spring.database.url=jdbc:mysql://home/user/app:user@127.0.0.1:3306/database_name ("home/user/app" is not path, it's username in the database url.)
+      - spring.datasource.schema=classpath:schema.sql
+      - class: com.example.package/class
+      - url: http://localhost:8080/api
+
+      ## Path Transformation Rules
+      Follow these steps to properly convert each identified file path:
+      1. Remove OS-specific prefix:
+         - For Windows: Remove drive letter (e.g., C:)
+         - For Unix: Remove root directories like /home, /usr, /Users
+
+      2. Extract and preserve the application-specific portion of the path
+
+      3. Add the Azure mount placeholder:
+         - Standard format: "${AZURE_MOUNT_PATH}/your-path"
+         - For Spring property files (application.yaml/yml/properties in src/main/resources):
+           Use "${AZURE_MOUNT_PATH:/mnt/azure}/your-path" to provide a default value
+
+      4. Normalize all path delimiters to forward slashes (/)
+
+      ## Examples
+      - Windows: "C:\Users\someone\logs\app.log" → "${AZURE_MOUNT_PATH}/logs/app.log"
+      - Unix: "/etc/config.xml" → "${AZURE_MOUNT_PATH}/config.xml"
+      - User directory: "/Users/bob/config.xml" → "${AZURE_MOUNT_PATH}/config.xml"
+      - Relative: "./data/info.txt" → "${AZURE_MOUNT_PATH}/data/info.txt"

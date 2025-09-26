@@ -1,0 +1,18 @@
+name: 'Update Java code to log to console'
+description: 'Update the Java code to ensure logs are output only to the console'
+
+codeLocation:
+  type: textsearch
+  filePattern: "**/*.java"
+  codePattern: >-
+    FileAppender|FileWriter|FileHandler|SocketHandler
+
+steps:
+  - description: "Log output to console using updated Java code"
+    type: "instruction"
+    content: |
+      Your goal is ensure the logger in java code has these features:
+      1. If there is no log related content in the java file, then do nothing.
+      2. If there is log related content in the java file, then make sure:
+        2.1. Log not output to file
+        2.2. Ensure log output to console

@@ -1,0 +1,48 @@
+name: 'Migrate S3 gradle dependency to Azure Blob Storage gradle dependency'
+description: "Converts Amazon S3 Gradle dependencies to Azure Blob Storage dependencies"
+codeLocation:
+  type: textsearch
+  filePattern: '**/build.gradle'
+  codePattern: >-
+    software.amazon.awssdk:s3|io.awspring.cloud:spring-cloud-aws-starter-s3|com.amazonaws:aws-java-sdk-s3
+
+steps:
+  - description: "Migrate S3 gradle dependency to Azure Blob Storage gradle dependency"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Gradle build file from using the Amazon S3 API dependencies to the Azure Storage Blob API dependencies.
+      Pay attention that, you should only update the specific dependency declarations and keep the rest of the file, you cannot replace the whole file. What you return must be a valid, complete Gradle build file.
+      Below are some references for you, please replace the dependencies in the Gradle file accordingly.
+      Please note that the three Azure-related dependencies should all be provided: one for the blob operations, one for batch operations, and one for authentication credentials.
+
+      S3 related dependencies (could appear in any of these formats):
+      ```gradle
+      implementation 'software.amazon.awssdk:s3:X.Y.Z'
+      implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:X.Y.Z'
+      implementation 'com.amazonaws:aws-java-sdk-s3:X.Y.Z'
+      ```
+
+      Or in Kotlin DSL format:
+      ```kotlin
+      implementation("software.amazon.awssdk:s3:X.Y.Z")
+      implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:X.Y.Z")
+      implementation("com.amazonaws:aws-java-sdk-s3:X.Y.Z")
+      ```
+
+      Azure Blob Storage dependencies to use as replacements:
+      ```gradle
+      implementation platform('com.azure:azure-sdk-bom:1.2.36')
+
+      implementation 'com.azure:azure-storage-blob'
+      implementation 'com.azure:azure-storage-blob-batch'
+      implementation 'com.azure:azure-identity'
+      ```
+
+      Or in Kotlin DSL format:
+      ```kotlin
+      implementation(platform("com.azure:azure-sdk-bom:1.2.36"))
+
+      implementation("com.azure:azure-storage-blob")
+      implementation("com.azure:azure-storage-blob-batch")
+      implementation("com.azure:azure-identity:1.16.3")
+      ```

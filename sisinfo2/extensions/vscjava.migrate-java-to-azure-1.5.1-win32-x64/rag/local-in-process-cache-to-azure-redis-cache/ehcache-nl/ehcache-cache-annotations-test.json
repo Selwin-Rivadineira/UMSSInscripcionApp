@@ -1,0 +1,27 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "CacheService.java",
+      "nested/CacheService.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "@Cacheable(value = \"userCache\", key = \"#userId\")",
+      "@CacheEvict(value = \"userCache\", allEntries = true)",
+      "@CachePut(value = \"userCache\", key = \"#user.id\")",
+      "@CacheConfig(cacheNames = \"userCache\")",
+      "@Caching(evict = { @CacheEvict(value = \"userCache\", key = \"#userId\") })"
+    ],
+    "shouldNotMatch": [
+      "@Transactional",
+      "@Component",
+      "String unrelated = \"UnrelatedClass\";"
+    ]
+  }
+}

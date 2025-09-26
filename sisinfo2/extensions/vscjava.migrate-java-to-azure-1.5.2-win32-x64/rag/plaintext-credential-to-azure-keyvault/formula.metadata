@@ -1,0 +1,4 @@
+group:
+  id: plaintext-credential-to-azure-keyvault
+  displayName: Credentials to Azure Key Vault
+  description: Credentials to Azure Key Vault

@@ -1,0 +1,11 @@
+group:
+  id: log-to-console
+  displayName: Logging to Console
+  description: Logging to Console
+tags:
+  - logging
+  - log to console
+  - console output
+  - logback
+  - log4j2
+  - log4j

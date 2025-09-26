@@ -1,0 +1,17 @@
+name: "Migrate RabbitMQ variable names"
+description: "Migrate RabbitMQ-style variable names to match Azure Service Bus style"
+
+codeLocation:
+  type: "textsearch"
+  codePattern: '(?i)^(?!(?:\s*)(package|import|class)).*rabbitmq'    # match rabbitmq but not start with import/package
+  filePattern: '**/*.java'
+
+steps:
+  - description: "Migrate RabbitMQ variable names"
+    type: "instruction"
+    content: |
+      Your task is to migrate the RabbitMQ variable names to servicebus variable names.
+      Locate the java code to consume the variables in environment variables or configuration files, if the name has string 'rabbitmq', rename the string 'rabbitmq' to 'servicebus'.
+      Note:
+        - *DO NOT* optimize the code blocks not directly related to the migration changes, *KEEP* those commented out code, minimize the amount of code changes.
+        - *DO NOT* update the strings in package names, class names or function names.

@@ -1,0 +1,27 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "application.properties",
+      "application.yaml",
+      "application.yml",
+      "application-dev.properties",
+      "application-prod.yaml",
+      "nested/application.properties",
+      "nested/application-dev.yml"
+    ],
+    "shouldNotMatch": [
+      "pom.xml",
+      "build.gradle",
+      "Application.java",
+      "config.json"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "postgresql.user",
+      ""
+    ],
+    "shouldNotMatch": [
+    ]
+  }
+}

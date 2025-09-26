@@ -1,0 +1,43 @@
+name: "Migrate RabbitMQ ConnectionFactory"
+description: "Migrate RabbitMQ ConnectionFactory logic"
+
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: 'rabbit\.connection\.'
+
+steps:
+  - description: "Migrate RabbitMQ ConnectionFactory to Service Bus Connection"
+    type: "instruction"
+    content: |
+      Your task is to migrate the java code from using RabbitMQ ConnectionFactory methods to the Azure Service Bus while maintaining the same functionality.
+      RabbitMQ uses ConnectionFactory to init connection to the rabbitmq server. In Service Bus scenario, we use Managed Identity and environment variables to auto connect to Azure Service Bus Instance.
+      Remove the ConnectionFactory related code including the Spring Bean, class member and variables.
+      The variables includes [host, port, username, password, virtual-host, ssl.enabled]
+
+      Important guidelines:
+
+      1. ConnectionFactory Bean Removal:
+         - Completely remove any beans, class members and variables of the RabbitMQ ConnectionFactory type.
+         - DO NOT create the Service Bus connection factory bean as replacement since the underlying Azure Service Bus library provides auto-configuration for it.
+         - Example of code to remove entirely:
+           ```java
+           @Bean
+           public ConnectionFactory connectionFactory() {
+               CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
+               connectionFactory.setHost(rabbitMQHost);
+               connectionFactory.setPort(rabbitMQPort);
+               connectionFactory.setUsername(rabbitMQUsername);
+               connectionFactory.setPassword(rabbitMQPassword);
+               connectionFactory.setVirtualHost(rabbitMQVirtualHost);
+               return connectionFactory;
+           }
+           ```
+
+      2. Import Cleanup:
+         - Remove all AMQP-related imports after migration
+         - All imports from packages starting with 'org.springframework.amqp'
+         - All imports from packages starting with 'com.rabbitmq'
+         - Any other unused imports that were related to RabbitMQ
+
+      Remember to maintain the same functionality while removing RabbitMQ-specific code. The Azure Service Bus auto-configuration will handle connection management.

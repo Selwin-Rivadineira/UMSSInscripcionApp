@@ -1,0 +1,57 @@
+name: 'Migrate S3 pom dependency to Azure Blob Storage pom dependency'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.xml'
+  codePattern: >-
+    spring-cloud-aws-starter-s3|<artifactId>s3</artifactId>|<artifactId>aws-java-sdk-s3</artifactId>
+
+steps:
+  - description: "Migrate S3 pom dependency to Azure Blob Storage pom dependency"
+    type: "instruction"
+    content: |
+      Your task is to migrate a pom.xml from using the Amazon S3 API dependencies to the Azure Storage Blob API dependencies.
+      Pay attention that, you should only update the specific one or two dependency blocks and keep the rest of the file, you cannot replace the whole file. What you returns must be a valid, whole, pom file.
+      Below are some references for you, please replace the dependencies in pom.xml accordingly。
+      Please be noted that the two blob related dependencies should both be provided, one for the credentials while initializing the client and the other for blob related APIs.
+      S3 related dependencies:
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>s3</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>io.awspring.cloud</groupId>
+        <artifactId>spring-cloud-aws-starter-s3</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-s3</artifactId>
+      </dependency>
+
+      Blob related dependencies:
+      1. Managed dependency:
+        <dependencyManagement>
+          <dependencies>
+            <dependency>
+              <groupId>com.azure</groupId>
+              <artifactId>azure-sdk-bom</artifactId>
+              <version>1.2.36</version> <!-- Use the latest version available -->
+              <type>pom</type>
+              <scope>import</scope>
+            </dependency>
+          </dependencies>
+        </dependencyManagement>
+      2. Dependencies:
+        <dependency>
+          <groupId>com.azure</groupId>
+          <artifactId>azure-storage-blob</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>com.azure</groupId>
+          <artifactId>azure-storage-blob-batch</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>com.azure</groupId>
+          <artifactId>azure-identity</artifactId>
+          <version>1.16.3</version>
+        </dependency>

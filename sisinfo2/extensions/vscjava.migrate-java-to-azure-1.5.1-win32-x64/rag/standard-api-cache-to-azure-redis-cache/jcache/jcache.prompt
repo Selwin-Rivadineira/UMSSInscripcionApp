@@ -1,0 +1,144 @@
+#codebase
+
+Here's a structured prompt to guide LLM in migrating Java JCache implementation to Azure Cache for Redis:
+
+---
+
+**Task Prompt: JCache → Azure Cache for Redis Migration**
+
+### Context
+Your Java project currently uses Java JCache as a distributed cache
+Key Points:
+1. You need to migrate the entire project to use Azure Cache for Redis instead of Java JCache, focusing on code changes, dependency updates, and configuration adjustments.
+2. Please find suitable places to make the changes directly, like in-place modifying the pom.xml/build.gradle/application.yml file, write compilable code, don't leave uncompleted code blocks.
+3. You need to change the all the Java JCache cache related logic and keep other unchanged. At the same time, each place that uses Java JCache api, must be replaced with Azure cache for redis ones.
+4. Ignore data migration and infrastructure setup.
+5. You should delete or comment out the original implementation, since the depdendency will be removed. Or we cannot pass the build.
+
+---
+**Key Focus Areas:**
+1. Dependency replacement (JCache provider → Redis client)
+2. Configuration changes (connection parameters, pooling)
+3. Code migration patterns (API alignment)
+4. Redis-specific feature adaptation
+
+**Actionable Steps:**
+
+**1. Dependency Replacement**
+```diff
+<!-- Before (JCache) -->
+<dependency>
+    <groupId>javax.cache</groupId>
+    <artifactId>cache-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.ehcache</groupId> <!-- Example provider -->
+    <artifactId>ehcache</artifactId>
+</dependency>
+
+<!-- After (Azure Redis) -->
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>5.2.0</version>
+</dependency>
+<!-- Optional: Spring Boot Redis Starter -->
+    <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>3.4.4</version>
+</dependency>
+```
+
+**2. Connection Configuration**
+- Replace JCache configuration with Redis properties:
+```java
+// Before: JCache config via XML/Config
+CacheManager cacheManager = Caching.getCachingProvider()
+    .getCacheManager();
+
+// After: Redis connection setup
+    // Jedis library doesn't support passing in AzureCredentials, so fall back to access key solution
+    JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setMaxTotal(50); // Match WebSphere thread pool
+
+    JedisPool pool = new JedisPool(poolConfig,
+        "<your-cache>.redis.cache.windows.net",
+        6380,
+        2000,
+        "<your-access-key>",
+        true // SSL
+    );
+```
+- Optional: Spring Boot `application.yml` Configuration
+  If using Spring Boot, update Redis properties (keep strict the same properties), and please also consider using the following configs in the redis connection file above:
+  ```yaml
+  spring:
+    data:
+      redis:
+        host: <AZURE_REDIS_HOST>
+        port: 6380
+        username: <USERNAME>
+        password: <PASSWORD>
+				ssl:
+          enabled: true
+        lettuce:
+          pool:
+            max-active: 20  # Optimize for Azure Redis connection limits
+  ```
+
+**3. Cache Instance Migration**
+```java
+// Before: JCache usage
+Cache<String, Object> jcache = cacheManager.getCache("myCache");
+jcache.put("key", value);
+
+// After: Redis template approach
+RedisTemplate<String, Object> template = new RedisTemplate<>();
+template.setConnectionFactory(redisConnectionFactory);
+ValueOperations<String, Object> ops = template.opsForValue();
+ops.set("key", value);
+```
+
+**4. API Translation Patterns**
+| JCache Operation | Redis Equivalent |
+|-------------------|-------------------|
+| `cache.put()`     | `jedis.set()`     |
+| `cache.get()`     | `jedis.get()`     |
+| `cache.remove()`  | `jedis.del()`     |
+| `cache.clear()`   | `jedis.flushDB()` |
+
+**5. Advanced Feature Handling**
+- Transaction support: Replace JCache `EntryProcessor` with Redis MULTI/EXEC
+- Event listeners: Migrate to Redis Keyspace Notifications
+- Serialization: Configure Jackson2JsonRedisSerializer instead of JCache default
+
+**Verification Checklist:**
+✅ Remove all JCache-specific annotations (@CacheResult)
+✅ Update connection timeout settings (Azure recommends 5000ms+)
+✅ Implement proper connection pooling (Azure limits max connections)
+✅ Add retry logic for transient failures (Azure SDK patterns)
+
+**Example Migration Snippet:**
+```java
+// Before
+@CacheResult(cacheName = "userProfile")
+public UserProfile getUser(String userId) { ... }
+
+// After
+public UserProfile getUser(String userId) {
+    String serialized = jedis.get("userProfile:" + userId);
+    return deserialize(serialized);
+}
+```
+
+### Pass the build
+Use this command to check whether the project can pass the build after migration. If not, fix any build error and make sure it pass the build.
+For windows:
+```
+cmd /c "mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8"
+```
+For Linux / macOS:
+```
+mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8
+```

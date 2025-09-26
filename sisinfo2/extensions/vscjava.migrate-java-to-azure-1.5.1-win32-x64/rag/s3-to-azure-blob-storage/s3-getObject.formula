@@ -1,0 +1,132 @@
+name: 'Migrate S3client getObject to Azure Blob Storage download'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    GetObjectRequest|getObject
+steps:
+  - description: "Migrate s3client with getObject API to Azure Blob Storage download"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Pay attention to the download scenario with range specified, you should try to use APIs like downloadStreamWithResponse in which you can specific the range parameter.
+      Note:
+        1. Leverage downloadToFile method to download a blob to a file. Don't create your own api.
+        2. `The package of `BlobClient` is com.azure.storage.blob and the package of `BlobClientBase` is com.azure.storage.blob.specialized, don't make mistake here.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: S3Client
+        Package: software.amazon.awssdk.services.s3
+        Methods:
+          - default ResponseInputStream<GetObjectResponse> getObject​(GetObjectRequest getObjectRequest) throws NoSuchKeyException, InvalidObjectStateException, AwsServiceException, SdkClientException, S3Exception
+            Description: Retrieves an object from Amazon S3.
+            Details: Specify the full key name for the object in the GetObject request.
+            Parameters:
+            - getObjectRequest
+
+      Class: GetObjectRequest
+        Package:software.amazon.awssdk.services.s3.model
+        Methods:
+          - public static GetObjectRequest.Builder builder()
+
+      Interface: GetObjectRequest.Builder
+        Methods:
+          - GetObjectRequest.Builder bucket(String bucket)
+            Description: The bucket name containing the object.
+            Parameters:
+            - bucket: The bucket name containing the object.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - GetObjectRequest.Builder key(String key)
+            Description: Key of the object to get.
+            Parameters:
+            - key: Key of the object to get.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - GetObjectRequest.Builder range​(String range)
+            Description: Downloads the specified byte range of an object. For more information about the HTTP Range header, see https://www.rfc-editor.org/rfc/rfc9110.html#name -range.
+            Parameters:
+            - range - Downloads the specified byte range of an object. For more information about the HTTP Range header, see https://www.rfc-editor.org/rfc/rfc9110 .html#name-range.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Class BlobServiceClient
+        Package: com.azure.storage.blob
+        Methods:
+          - public BlobContainerClient getBlobContainerClient(String containerName)
+            Description: Initializes a BlobContainerClient object pointing to the specified container. This method does not create a container. It simply constructs the URL to the container and offers access to methods relevant to containers.
+            Parameters:
+            - containerName: The name of the container to point to.
+            Returns: A BlobContainerClient object pointing to the specified container.
+
+      Class BlobContainerClient
+        Package: com.azure.storage.blob
+        Methods:
+        - public BlobClient getBlobClient(String blobName)
+          Description: Initializes a new BlobClient object by concatenating blobName to the end of ContainerAsyncClient's URL. The new BlobClient uses the same request policy pipeline as the ContainerAsyncClient.
+          Parameters:
+          - blobName: A String representing the name of the blob. If the blob name contains special characters, pass in the url encoded version of the blob name.
+          Returns: A new BlobClient object which references the blob with the specified name in this container.
+        - public boolean exists()
+          Description: Gets if the container this client represents exists in the cloud.
+          Returns: true if the container exists, false if it doesn't
+
+      Class: BlobClient
+        Package: com.azure.storage.blob
+        Note: `The package of `BlobClient` is com.azure.storage.blob and the package of `BlobClientBase` is com.azure.storage.blob.specialized, don't make mistake here.
+        Methods:
+          - public BinaryData downloadContent()
+            Description: Downloads the entire blob. This method supports downloads up to 2GB of data. Content will be buffered in memory. If the blob is larger, use downloadStream(OutputStream stream) to download larger blobs.
+            Returns: The content of the blob.
+          - public void downloadStream(OutputStream stream)
+            Description: Downloads the entire blob into an output stream.
+            Parameters:
+              - stream: A non-null OutputStream instance where the downloaded data will be written.
+          - public BlobDownloadResponse downloadStreamWithResponse(OutputStream stream, BlobRange range, DownloadRetryOptions options, BlobRequestConditions requestConditions, boolean getRangeContentMd5, Duration timeout, Context context)
+            Description: Downloads a range of bytes from a blob into an output stream.
+            Parameters:
+              - stream - A non-null OutputStream instance where the downloaded data will be written.
+              - range - BlobRange
+              - options - DownloadRetryOptions
+              - requestConditions - BlobRequestConditions
+              - getRangeContentMd5 - Whether the contentMD5 for the specified blob range should be returned.
+              - timeout - An optional timeout value beyond which a RuntimeException will be raised.
+              - context - Additional context that is passed through the Http pipeline during the service call.
+            Returns: A response containing status code and HTTP headers.
+          - public BlobProperties downloadToFile(String filePath, boolean overwrite)
+            Description: Downloads the entire blob into a file specified by the path. If overwrite is set to false, the file will be created and must not exist, if the file already exists a FileAlreadyExistsException will be thrown.
+            Parameters:
+              - filePath: A String representing the filePath where the downloaded data will be written.
+              - overwrite: Whether to overwrite the file, should the file exist.
+            Returns: The blob properties and metadata.
+          - public BlobDownloadContentResponse downloadContentWithResponse(DownloadRetryOptions options, BlobRequestConditions requestConditions, BlobRange range, boolean getRangeContentMd5, Duration timeout, Context context)
+            Description: Downloads a range of bytes from a blob into an output stream.
+            Parameters:
+              - options - DownloadRetryOptions
+              - requestConditions - BlobRequestConditions
+              - range - BlobRange
+              - getRangeContentMd5 - Whether the contentMD5 for the specified blob range should be returned.
+              - timeout - An optional timeout value beyond which a RuntimeException will be raised.
+              - context - Additional context that is passed through the Http pipeline during the service call.
+
+      Class: BlobRange
+        Package: com.azure.storage.blob.models
+        Description: This is a representation of a range of bytes on a blob, typically used during a download operation.
+        Constructors:
+          - public BlobRange(long offset)
+          - public BlobRange(long offset, Long count)
+
+      class: BlobDownloadToFileOptions
+        Package: com.azure.storage.blob.options
+        Description: Extended options that may be passed when downloading a blob to a file.
+        Methods:
+          - public BlobDownloadToFileOptions setDownloadRetryOptions(DownloadRetryOptions downloadRetryOptions)
+            Description: set download retry options
+            Parameters:
+              - downloadRetryOptions - DownloadRetryOptions
+            Returns: The updated options.
+          - public BlobDownloadToFileOptions setRange(BlobRange range)
+            Parameters:
+              - range - BlobRange
+            Returns: The updated options.

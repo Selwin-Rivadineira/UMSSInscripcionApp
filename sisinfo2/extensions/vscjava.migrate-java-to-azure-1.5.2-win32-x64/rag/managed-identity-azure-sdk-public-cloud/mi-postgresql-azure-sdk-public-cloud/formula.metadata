@@ -1,0 +1,4 @@
+group:
+  id: mi-postgresql-azure-sdk-public-cloud
+  displayName: PostgreSQL Managed Identity via Azure SDK for Public Cloud
+  description: PostgreSQL Managed Identity via Azure SDK for Public Cloud

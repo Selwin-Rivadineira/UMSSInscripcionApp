@@ -1,0 +1,70 @@
+name: 'Migrate S3Object to Azure Blob Storage BlobItem'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    S3Object|s3Object
+steps:
+  - description: "Migrate s3client with restoreObject API to Azure Blob Storage blob copy"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Be super careful with the BlobItem.getProperties().getContentLength() vs blobClient.getProperties().getBlobSize() .
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: S3Object.Builder
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - S3Object.Builder eTag​(String eTag)
+            Description: The entity tag is a hash of the object. The ETag reflects changes only to the contents of an object, not its metadata.
+            Parameters:
+              - eTag - The entity tag is a hash of the object. The ETag reflects changes only to the contents of an object, not its metadata.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - S3Object.Builder size​(Long size)
+            Description: Size in bytes of the object
+            Parameters:
+              - size - Size in bytes of the object
+            Returns: Returns a reference to this object so that method calls can be chained together.
+
+      Class: S3Object
+        Description: An object consists of data and its descriptive metadata.
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - public final String eTag()
+            Description: The entity tag is a hash of the object. The ETag reflects changes only to the contents of an object, not its metadata.
+            Returns: The entity tag is a hash of the object.
+          - public final Long size()
+            Description: Size in bytes of the object
+            Returns: Size in bytes of the object
+
+      Class: BlobItem
+        Description: An Azure Storage Blob.
+        Package: com.azure.storage.blob.models
+        Methods:
+          - public Map getMetadata()
+            Description: Get the metadata property: The metadata property.
+            Returns: the metadata value.
+          - public String getName()
+            Description: Get the name property: The name property.
+            Returns: the name value.
+          - public BlobItemProperties getProperties()
+            Description: Get the properties property: The properties property.
+            Returns: the properties value.
+
+      Class: BlobItemProperties
+        Description: Properties of a blob.
+        Package: com.azure.storage.blob.models
+        Methods:
+          - public AccessTier getAccessTier()
+            Description: Get the accessTier property: Possible values include: 'P4', 'P6', 'P10', 'P15', 'P20', 'P30', 'P40', 'P50', 'P60', 'P70', 'P80', 'Hot', 'Cool', 'Archive'.
+            Returns: the accessTier value.
+          - public String getContentEncoding()
+            Description: Get the contentEncoding property: The contentEncoding property.
+            Returns: the contentEncoding value.
+          - public Long getContentLength()
+            Description: Get the contentLength property: Size in bytes.
+            Returns: the contentLength value.

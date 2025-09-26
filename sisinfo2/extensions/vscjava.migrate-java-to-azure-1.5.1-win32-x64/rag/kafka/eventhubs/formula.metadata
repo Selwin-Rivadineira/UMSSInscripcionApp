@@ -1,0 +1,4 @@
+group:
+  id: eventhubs
+  displayName: Kafka to Azure Event Hubs for Apache Kafka
+  description: Kafka to Azure Event Hubs for Apache Kafka

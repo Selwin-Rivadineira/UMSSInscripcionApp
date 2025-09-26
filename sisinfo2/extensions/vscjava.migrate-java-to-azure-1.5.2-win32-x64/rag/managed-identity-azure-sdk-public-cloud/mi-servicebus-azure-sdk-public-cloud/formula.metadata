@@ -1,0 +1,4 @@
+group:
+  id: mi-servicebus-azure-sdk-public-cloud
+  displayName: Azure Service Bus Managed Identity via Azure SDK for Public Cloud
+  description: Azure Service Bus Managed Identity via Azure SDK for Public Cloud

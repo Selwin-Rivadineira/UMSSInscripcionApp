@@ -1,0 +1,299 @@
+name: 'Migrate S3client presignedUrl to Azure Blob Storage sasToken'
+description: "Migrate AWS S3 presigned URL generation to Azure Blob Storage SAS token generation"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    GetObjectPresignRequest|PresignedGetObjectRequest|PutObjectPresignRequest|PresignedPutObjectRequest|generatePresignedUrl|presignGetObject|presignPutObject|GeneratePresignedUrlRequest
+steps:
+  - description: "Migrate AWS S3 presigned URL generation to Azure Blob Storage SAS token"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 presigned URL APIs to the Azure Storage Blob SAS token APIs while maintaining the same functionality. Below is a reference to the relevant AWS S3 and Azure Storage Blob APIs for your convenience.
+      
+      In AWS S3:
+      - Presigned URLs provide temporary access to specific objects in S3 buckets.
+      - They are created through S3Presigner (AWS SDK v2), AmazonS3 with GeneratePresignedUrlRequest (AWS SDK v1), or direct AmazonS3.generatePresignedUrl methods.
+      - Presigned URLs have an expiration time and can restrict access to specific HTTP methods (GET, PUT).
+      
+      In Azure Storage Blob:
+      - SAS tokens are generated to provide temporary access to blobs or containers.
+      - These tokens can be generated via methods like BlobClient.generateSasUri() or by creating a SAS token manually and appending it to the blob URL.
+      
+      Some key differences to be aware of:
+        1. In AWS S3, presigned URLs are generated directly. In Azure, you can either generate a full SAS URI or generate a SAS token and then append it to the blob URL.
+        2. Azure Storage uses the BlobServiceSasSignatureValues class to specify SAS token parameters.
+        3. When migrating code, make sure to handle expiry times correctly, as both APIs use different time unit approaches.
+      
+      Note:
+        1. The package of `BlobClient` is com.azure.storage.blob and the package of `BlobClientBase` is com.azure.storage.blob.specialized, don't make mistake here.
+        2. The package of `BlobContainerClient` is com.azure.storage.blob.BlobContainerClient, don't make mistake here.
+      
+      Below are the APIs provided for your reference. Don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      # AWS S3 APIs
+
+      Interface: S3Presigner
+        Package: software.amazon.awssdk.services.s3.presigner
+        Methods:
+          - PresignedGetObjectRequest presignGetObject(GetObjectPresignRequest request)
+            Description: Creates a presigned request for the getObject operation.
+            Parameters:
+              - request: GetObjectPresignRequest containing the details of the presign request
+            Returns: A PresignedGetObjectRequest with a presigned URL and metadata about the presign process.
+          - PresignedPutObjectRequest presignPutObject(PutObjectPresignRequest request)
+            Description: Creates a presigned request for the putObject operation.
+            Parameters:
+              - request: PutObjectPresignRequest containing the details of the presign request
+            Returns: A PresignedPutObjectRequest with a presigned URL and metadata about the presign process.
+
+      Class: GetObjectPresignRequest
+        Package: software.amazon.awssdk.services.s3.presigner.model
+        Methods:
+          - static GetObjectPresignRequest.Builder builder()
+            Description: Returns a builder for creating a GetObjectPresignRequest.
+            Returns: A new builder to build a GetObjectPresignRequest.
+
+      Interface: GetObjectPresignRequest.Builder
+        Methods:
+          - GetObjectPresignRequest.Builder signatureDuration(Duration duration)
+            Description: Sets how long the presigned URL should be valid for.
+            Parameters:
+              - duration: The duration of time that the presigned URL should be valid for.
+            Returns: This builder for method chaining.
+          - GetObjectPresignRequest.Builder getObjectRequest(GetObjectRequest getObjectRequest)
+            Description: Sets the GetObjectRequest to use when presigning.
+            Parameters:
+              - getObjectRequest: The GetObjectRequest to use when presigning.
+            Returns: This builder for method chaining.
+          - GetObjectPresignRequest build()
+            Description: Builds the GetObjectPresignRequest.
+            Returns: A GetObjectPresignRequest based on the contents of this builder.
+
+      Class: PutObjectPresignRequest
+        Package: software.amazon.awssdk.services.s3.presigner.model
+        Methods:
+          - static PutObjectPresignRequest.Builder builder()
+            Description: Returns a builder for creating a PutObjectPresignRequest.
+            Returns: A new builder to build a PutObjectPresignRequest.
+
+      Interface: PutObjectPresignRequest.Builder
+        Methods:
+          - PutObjectPresignRequest.Builder signatureDuration(Duration duration)
+            Description: Sets how long the presigned URL should be valid for.
+            Parameters:
+              - duration: The duration of time that the presigned URL should be valid for.
+            Returns: This builder for method chaining.
+          - PutObjectPresignRequest.Builder putObjectRequest(PutObjectRequest putObjectRequest)
+            Description: Sets the PutObjectRequest to use when presigning.
+            Parameters:
+              - putObjectRequest: The PutObjectRequest to use when presigning.
+            Returns: This builder for method chaining.
+          - PutObjectPresignRequest build()
+            Description: Builds the PutObjectPresignRequest.
+            Returns: A PutObjectPresignRequest based on the contents of this builder.
+
+      Class: GeneratePresignedUrlRequest
+        Package: com.amazonaws.services.s3.model
+        Description: Provides options for generating a pre-signed URL for an Amazon S3 resource (bucket or object).
+        Constructors:
+          - GeneratePresignedUrlRequest(String bucketName, String key)
+            Description: Creates a new GeneratePresignedUrlRequest for the specified bucket name and object key name.
+            Parameters:
+              - bucketName: The name of the bucket containing the desired object.
+              - key: The key under which the desired object is stored.
+          - GeneratePresignedUrlRequest(String bucketName, String key, HttpMethod method)
+            Description: Creates a new GeneratePresignedUrlRequest for the specified bucket name, object key name, and HTTP method.
+            Parameters:
+              - bucketName: The name of the bucket containing the desired object.
+              - key: The key under which the desired object is stored.
+              - method: The HTTP method for which the URL will be valid.
+        Methods:
+          - void setExpiration(Date expiration)
+            Description: Sets the expiration date for the pre-signed URL.
+            Parameters:
+              - expiration: The time after which the pre-signed URL will no longer be valid.
+          - void setMethod(HttpMethod method)
+            Description: Sets the HTTP method (GET, PUT) to be allowed by the pre-signed URL.
+            Parameters:
+              - method: The HTTP method to use.
+          - void setBucketName(String bucketName)
+            Description: Sets the name of the bucket containing the desired object.
+            Parameters:
+              - bucketName: The name of the bucket containing the desired object.
+          - void setKey(String key)
+            Description: Sets the key under which the desired object is stored.
+            Parameters:
+              - key: The key under which the desired object is stored.
+          - void setContentType(String contentType)
+            Description: Sets the content type for the request. This is especially useful for PUT requests.
+            Parameters:
+              - contentType: The content type to set.
+
+      Class: AmazonS3
+        Package: com.amazonaws.services.s3
+        Methods:
+          - URL generatePresignedUrl(String bucketName, String key, Date expiration)
+            Description: Returns a pre-signed URL for accessing an Amazon S3 resource.
+            Parameters:
+              - bucketName: The name of the bucket containing the desired object.
+              - key: The key in the specified bucket under which the desired object is stored.
+              - expiration: The time at which the returned pre-signed URL will expire.
+            Returns: A pre-signed URL which expires at the specified time, and can be used to allow anyone to download the specified object from S3, without exposing AWS security credentials.
+          - URL generatePresignedUrl(String bucketName, String key, Date expiration, HttpMethod method)
+            Description: Returns a pre-signed URL for accessing an Amazon S3 resource.
+            Parameters:
+              - bucketName: The name of the bucket containing the desired object.
+              - key: The key in the specified bucket under which the desired object is stored.
+              - expiration: The time at which the returned pre-signed URL will expire.
+              - method: The HTTP method verb to use for this URL
+            Returns: A pre-signed URL which expires at the specified time, and can be used to allow anyone to download the specified object from S3, without exposing AWS security credentials.
+          - URL generatePresignedUrl(GeneratePresignedUrlRequest generatePresignedUrlRequest)
+            Description: Returns a pre-signed URL for accessing an Amazon S3 resource, using the parameters and settings in the specified request object.
+            Parameters:
+              - generatePresignedUrlRequest: The request object containing all the options for generating a pre-signed URL.
+            Returns: A pre-signed URL which expires at the specified time, and can be used to allow anyone to perform the operation specified in the request on the specified S3 resource, without exposing AWS security credentials.
+
+      # Azure Blob Storage APIs
+
+      Class: BlobClient
+        Package: com.azure.storage.blob
+        Methods:
+          - public String getBlobUrl()
+            Description: Gets the URL of the blob represented by this client.
+            Returns: The URL of the blob.
+          - public String generateSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues)
+            Description: Generates a service SAS for the blob using the specified BlobServiceSasSignatureValues
+            Parameters:
+              - blobServiceSasSignatureValues - BlobServiceSasSignatureValues
+            Returns: A String representing the SAS query parameters.
+          - public String generateSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues, Context context)
+            Description: Generates a service SAS for the blob using the specified BlobServiceSasSignatureValues
+            Parameters:
+              - blobServiceSasSignatureValues - BlobServiceSasSignatureValues
+              - context - Additional context that is passed through the code when generating a SAS.
+            Returns: A String representing the SAS query parameters.
+          - public String generateUserDelegationSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues, UserDelegationKey userDelegationKey)
+            Description: Generates a user delegation SAS for the blob using the specified BlobServiceSasSignatureValues.
+            Parameters:
+              - blobServiceSasSignatureValues - BlobServiceSasSignatureValues
+              - userDelegationKey - A UserDelegationKey object used to sign the SAS values. See getUserDelegationKey(OffsetDateTime start, OffsetDateTime expiry) for more information on how to get a user delegation key.
+            Returns: A String representing the SAS query parameters.
+          - public String generateUserDelegationSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues, UserDelegationKey userDelegationKey, String accountName, Context context)
+            Description: Generates a user delegation SAS for the blob using the specified BlobServiceSasSignatureValues.
+            Parameters:
+              - blobServiceSasSignatureValues - BlobServiceSasSignatureValues
+              - userDelegationKey - A UserDelegationKey object used to sign the SAS values. See getUserDelegationKey(OffsetDateTime start, OffsetDateTime expiry) for more information on how to get a user delegation key.
+              - accountName - The account name.
+              - context - Additional context that is passed through the code when generating a SAS.
+            Returns: A String representing the SAS query parameters.
+
+      Class: BlobServiceClient
+        Package: com.azure.storage.blob
+        Methods:
+          - BlobContainerClient getBlobContainerClient(String containerName)
+            Description: Gets a client pointing to the container.
+            Parameters:
+              - containerName: The name of the container to point to.
+            Returns: A BlobContainerClient object pointing to the specified container.
+
+      Class: BlobContainerClient
+        Package: com.azure.storage.blob
+        Methods:
+          - BlobClient getBlobClient(String blobName)
+            Description: Gets a client pointing to the blob.
+            Parameters:
+              - blobName: The name of the blob to point to.
+            Returns: A BlobClient object pointing to the specified blob.
+          - public String generateSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues, Context context)
+            Description: Generates a service SAS for the container using the specified BlobServiceSasSignatureValues
+            Parameters: 
+              - blobServiceSasSignatureValues: Configurations for the service SAS.
+              - userDelegationKey : Additional context that is passed through the code when generating a SAS.
+            Returns: A String representing the SAS query parameters.
+          - public String generateUserDelegationSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues, UserDelegationKey userDelegationKey)
+            Description: Generates a user delegation SAS for the container using the specified BlobServiceSasSignatureValues.
+            Parameters: 
+              - blobServiceSasSignatureValues: Configurations for the service SAS.
+              - context: A UserDelegationKey object used to sign the SAS values. 
+            Returns: A String representing the SAS query parameters.
+          - public String generateSas(BlobServiceSasSignatureValues blobServiceSasSignatureValues)
+            Description: Generates a service SAS for the container using the specified BlobServiceSasSignatureValues
+            Parameters:
+              - blobServiceSasSignatureValues: Configurations for the service SAS.
+            Returns: A String representing the SAS query parameters.
+
+      Class: BlobSasPermission
+        Package: com.azure.storage.blob.sas
+        Methods:
+          - public BlobSasPermission setReadPermission(boolean hasAddPermission)
+            Description: Sets if the permission allows for read operations.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setWritePermission(boolean hasAddPermission)
+            Description: Sets if the permission allows for write operations.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setCreatePermission(boolean hasAddPermission)
+            Description: Sets if the permission allows for create operations.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setDeletePermission(boolean hasAddPermission)
+            Description: Sets if the permission allows for delete operations.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setAddPermission(boolean hasAddPermission)
+            Description: Sets the add permission status.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setExecutePermission(boolean hasExecutePermission)
+            Description: Sets the add permission status.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setListPermission(boolean hasExecutePermission)
+            Description: Sets the add permission status.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setReadPermission(boolean hasExecutePermission)
+            Description: Sets the add permission status.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+          - public BlobSasPermission setWritePermission(boolean hasExecutePermission)
+            Description: Sets the add permission status.
+            Parameters:
+              - hasAddPermission - Permission status to set
+            Returns: The updated BlobSasPermission object.
+
+      Class: BlobServiceSasSignatureValues
+        Package: com.azure.storage.blob.sas
+        Description: Used to initialize parameters for a Shared Access Signature (SAS) for an Azure Blob Storage service.
+        Constructors:
+          - BlobServiceSasSignatureValues(OffsetDateTime expiryTime, BlobSasPermission permissions)
+            Description: Creates a BlobServiceSasSignatureValues object with the specified expiry time and permissions.
+            Parameters:
+              - expiryTime: The time after which the SAS will expire.
+              - permissions: The permissions to set for the SAS.
+          - BlobServiceSasSignatureValues(OffsetDateTime expiryTime, BlobContainerSasPermission  permissions)
+            Description: Creates a BlobServiceSasSignatureValues object with the specified expiry time and permissions.
+            Parameters:
+              - expiryTime: The time after which the SAS will expire.
+              - permissions - BlobContainerSasPermission allowed by the SAS.
+        Methods:
+          - BlobServiceSasSignatureValues setExpiryTime(OffsetDateTime expiryTime)
+            Description: Sets when the SAS will expire.
+            Parameters:
+              - expiryTime: The time after which the SAS will expire.
+            Returns: The updated BlobServiceSasSignatureValues object.
+          - BlobServiceSasSignatureValues setPermissions(BlobSasPermission permissions)
+            Description: Sets the permissions for the SAS.
+            Parameters:
+              - permissions: The permissions to set for the SAS.
+            Returns: The updated BlobServiceSasSignatureValues object.

@@ -1,0 +1,31 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "ExampleClass.java",
+      "nested/ExampleClass.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "CacheEventListener listener = new CacheEventListener() {\n  public void notifyElementPut() {\n    // handle put\n  }\n};",
+      "public class CustomCacheEventListener implements CacheEventListener {",
+      "public class CustomCacheEventListener extends CacheEventListener",
+      "@CacheEventListener\npublic class MyListener {\n  @EventType\n  ",
+      "public void onEvent(CacheEntryEvent event) {\n    // handle event\n  }\n}",
+      "registerCacheEventListener(new MyListener());",
+      "CacheEntryExpiredEvent event = new CacheEntryExpiredEvent(cache, key, value);",
+      "CacheEntryRemovedEvent event = new CacheEntryRemovedEvent(cache, key, value);",
+      "CacheEntryUpdatedEvent event = new CacheEntryUpdatedEvent(cache, key, value);",
+      "CacheEntryCreateEvent event = new CacheEntryCreateEvent(cache, key, value);"
+    ],
+    "shouldNotMatch": [
+      "String unrelated = \"UnrelatedClass\";",
+      "public void unrelatedMethod() {\n  // Not related to EventListener\n}"
+    ]
+  }
+}

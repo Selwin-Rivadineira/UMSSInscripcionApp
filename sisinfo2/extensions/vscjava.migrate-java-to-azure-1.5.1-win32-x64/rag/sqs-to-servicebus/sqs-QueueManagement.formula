@@ -1,0 +1,423 @@
+name: "Migrate AWS SQS Queue Management Operations"
+description: "Migrate AWS Simple Queue Service (SQS) queue management operations to Azure Service Bus"
+
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: "CreateQueueRequest|DeleteQueueRequest|GetQueueUrlRequest|ListQueuesRequest"
+
+steps:
+  - description: "Migrate AWS Simple Queue Service queue management operations to Azure Service Bus"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that uses AWS Simple Queue Service queue management operations to Azure Service Bus queue management operations while maintaining the same functionality.
+
+      Important guidelines:
+
+      1. Queue Management Client:
+         - For AWS SDK v1 (com.amazonaws.services.sqs), replace administrative operations with Azure ServiceBusAdministrationClient
+         - For AWS SDK v2 (software.amazon.awssdk.services.sqs), replace administrative operations with Azure ServiceBusAdministrationClient
+         - Example of Azure Service Bus administration client:
+           ```java
+           // Create administration client
+           ServiceBusAdministrationClient adminClient = new ServiceBusClientBuilder()
+               .fullyQualifiedNamespace(System.getenv("AZURE_SERVICEBUS_FQDN"))
+               .credential(new DefaultAzureCredential());
+               .buildAdministrationClient();
+           ```
+
+      2. Queue Creation:
+         - Example of AWS SQS v1 queue creation to replace:
+           ```java
+           // Using direct method
+           CreateQueueResult result = sqsClient.createQueue(queueName);
+           String queueUrl = result.getQueueUrl();
+
+           // Using request object with attributes
+           Map<String, String> attributes = new HashMap<>();
+           attributes.put(QueueAttributeName.VisibilityTimeout.toString(), "60");
+           attributes.put(QueueAttributeName.MessageRetentionPeriod.toString(), "86400");
+
+           CreateQueueRequest createQueueRequest = new CreateQueueRequest()
+               .withQueueName(queueName)
+               .withAttributes(attributes);
+           CreateQueueResult result = sqsClient.createQueue(createQueueRequest);
+           ```
+
+         - Example of AWS SQS v2 queue creation to replace:
+           ```java
+           // Using builder pattern
+           CreateQueueResponse response = sqsClient.createQueue(CreateQueueRequest.builder()
+               .queueName(queueName)
+               .attributes(Map.of(
+                   QueueAttributeName.VISIBILITY_TIMEOUT, "60",
+                   QueueAttributeName.MESSAGE_RETENTION_PERIOD, "86400"
+               ))
+               .build());
+           String queueUrl = response.queueUrl();
+           ```
+
+         - Azure Service Bus replacement:
+           ```java
+           // Create queue with options
+           CreateQueueOptions queueOptions = new CreateQueueOptions()
+            .setLockDuration(Duration.ofSeconds(60)) // Equivalent to visibility timeout
+            .setMaxSizeInMegabytes(1024)            // Size in MB
+            .setMaxDeliveryCount(10);               // Max delivery attempts
+
+           adminClient.createQueue(queueName);
+           // or with properties
+           adminClient.createQueue(queueName, queueOptions);
+           ```
+
+      3. Queue Deletion:
+         - Example of AWS SQS v1 queue deletion to replace:
+           ```java
+           // Using direct method
+           sqsClient.deleteQueue(queueUrl);
+
+           // Using request object
+           DeleteQueueRequest deleteQueueRequest = new DeleteQueueRequest(queueUrl);
+           sqsClient.deleteQueue(deleteQueueRequest);
+           ```
+
+         - Example of AWS SQS v2 queue deletion to replace:
+           ```java
+           sqsClient.deleteQueue(DeleteQueueRequest.builder()
+               .queueUrl(queueUrl)
+               .build());
+           ```
+
+         - Azure Service Bus replacement:
+           ```java
+           adminClient.deleteQueue(queueName);
+           ```
+
+      4. Queue Listing:
+         - Example of AWS SQS v1 queue listing to replace:
+           ```java
+           // Using direct method
+           ListQueuesResult result = sqsClient.listQueues();
+           List<String> queueUrls = result.getQueueUrls();
+
+           // Using request object
+           ListQueuesRequest listQueuesRequest = new ListQueuesRequest()
+               .withQueueNamePrefix("prefix");
+           ListQueuesResult result = sqsClient.listQueues(listQueuesRequest);
+           ```
+
+         - Example of AWS SQS v2 queue listing to replace:
+           ```java
+           ListQueuesResponse response = sqsClient.listQueues(ListQueuesRequest.builder()
+               .queueNamePrefix("prefix")
+               .build());
+           List<String> queueUrls = response.queueUrls();
+           ```
+
+         - Azure Service Bus replacement:
+           ```java
+           // List all queues
+           PagedIterable<QueueProperties> queues = adminClient.listQueues();
+
+           // Use the queues
+           for (QueueProperties queue : queues) {
+               String queueName = queue.getName();
+               // Do something with the queue
+           }
+           ```
+
+      5. Import Cleanup:
+         - Remove all AWS SQS-related imports after migration:
+           - All imports from packages starting with 'com.amazonaws.services.sqs'
+           - All imports from packages starting with 'software.amazon.awssdk.services.sqs'
+         - Add required Azure Service Bus imports
+
+      Below are the APIs provided for your reference:
+
+      Interface: AmazonSQS
+        Package: com.amazonaws.services.sqs
+        Methods:
+          - createQueue(String queueName)
+            Description: Creates a new queue with the specified name.
+            Parameters:
+              - queueName: The name of the queue to create
+            Returns: CreateQueueResult
+          - createQueue(CreateQueueRequest request)
+            Description: Creates a new queue with the specified attributes.
+            Parameters:
+              - request: Container for the necessary parameters to execute the CreateQueue operation
+            Returns: CreateQueueResult
+          - deleteQueue(String queueUrl)
+            Description: Deletes the queue specified by the queue URL.
+            Parameters:
+              - queueUrl: The URL of the queue to delete
+            Returns: void
+          - deleteQueue(DeleteQueueRequest request)
+            Description: Deletes the queue specified by the queue URL.
+            Parameters:
+              - request: Container for the necessary parameters to execute the DeleteQueue operation
+            Returns: void
+          - getQueueUrl(String queueName)
+            Description: Returns the URL of a queue based on the queue name.
+            Parameters:
+              - queueName: The name of the queue whose URL should be returned
+            Returns: GetQueueUrlResult
+          - getQueueUrl(GetQueueUrlRequest request)
+            Description: Returns the URL of a queue based on the queue name with options.
+            Parameters:
+              - request: Container for the necessary parameters to execute the GetQueueUrl operation
+            Returns: GetQueueUrlResult
+          - listQueues()
+            Description: Returns a list of all queues.
+            Returns: ListQueuesResult
+          - listQueues(String prefix)
+            Description: Returns a list of queues with the specified prefix.
+            Parameters:
+              - prefix: The prefix to filter queues by
+            Returns: ListQueuesResult
+          - listQueues(ListQueuesRequest request)
+            Description: Returns a list of queues with options.
+            Parameters:
+              - request: Container for the necessary parameters to execute the ListQueues operation
+            Returns: ListQueuesResult
+
+      Class: CreateQueueRequest
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - withQueueName(String queueName)
+            Description: Sets the name of the queue to create.
+            Parameters:
+              - queueName: The name of the queue to create
+            Returns: CreateQueueRequest
+          - withAttributes(Map<String, String> attributes)
+            Description: Sets the attributes of the queue to create.
+            Parameters:
+              - attributes: Map of queue attribute names to values
+            Returns: CreateQueueRequest
+
+      Class: CreateQueueResult
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - getQueueUrl()
+            Description: Gets the URL of the created queue.
+            Returns: String
+
+      Class: DeleteQueueRequest
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - DeleteQueueRequest(String queueUrl)
+            Description: Constructs a new DeleteQueueRequest with the specified queue URL.
+            Parameters:
+              - queueUrl: The URL of the queue to delete
+          - withQueueUrl(String queueUrl)
+            Description: Sets the URL of the queue to delete.
+            Parameters:
+              - queueUrl: The URL of the queue to delete
+            Returns: DeleteQueueRequest
+
+      Class: GetQueueUrlRequest
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - GetQueueUrlRequest(String queueName)
+            Description: Constructs a new GetQueueUrlRequest with the specified queue name.
+            Parameters:
+              - queueName: The name of the queue whose URL should be returned
+          - withQueueName(String queueName)
+            Description: Sets the name of the queue whose URL should be returned.
+            Parameters:
+              - queueName: The name of the queue
+            Returns: GetQueueUrlRequest
+
+      Class: GetQueueUrlResult
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - getQueueUrl()
+            Description: Gets the URL of the queue.
+            Returns: String
+
+      Class: ListQueuesRequest
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - withQueueNamePrefix(String prefix)
+            Description: Sets the prefix to filter queues by.
+            Parameters:
+              - prefix: The prefix to filter by
+            Returns: ListQueuesRequest
+
+      Class: ListQueuesResult
+        Package: com.amazonaws.services.sqs.model
+        Methods:
+          - getQueueUrls()
+            Description: Gets the list of queue URLs.
+            Returns: List<String>
+
+      Class: QueueAttributeName
+        Package: com.amazonaws.services.sqs.model
+        Constants:
+          - VisibilityTimeout: The length of time (in seconds) that a message received from a queue will be invisible to other receiving components.
+          - DelaySeconds: The time in seconds for which the delivery of all messages in the queue is delayed.
+          - MaximumMessageSize: The limit of how many bytes a message can contain before Amazon SQS rejects it.
+          - MessageRetentionPeriod: The number of seconds Amazon SQS retains a message.
+          - Policy: The queue's policy.
+          - ReceiveMessageWaitTimeSeconds: The time for which a ReceiveMessage call will wait for a message to arrive.
+          - RedrivePolicy: The parameters for the dead letter queue functionality of the source queue.
+          - ApproximateNumberOfMessages: The approximate number of visible messages in a queue.
+
+      Class: SqsClient (v2)
+        Package: software.amazon.awssdk.services.sqs
+        Methods:
+          - createQueue(CreateQueueRequest request)
+            Description: Creates a new queue with the specified attributes.
+            Parameters:
+              - request: Request object containing queue creation parameters
+            Returns: CreateQueueResponse
+          - deleteQueue(DeleteQueueRequest request)
+            Description: Deletes the queue specified by the queue URL.
+            Parameters:
+              - request: Request object containing queue deletion parameters
+            Returns: DeleteQueueResponse
+          - getQueueUrl(GetQueueUrlRequest request)
+            Description: Returns the URL of a queue based on the queue name.
+            Parameters:
+              - request: Request object containing queue name
+            Returns: GetQueueUrlResponse
+          - listQueues()
+            Description: Returns a list of all queues.
+            Returns: ListQueuesResponse
+          - listQueues(ListQueuesRequest request)
+            Description: Returns a list of queues with options.
+            Parameters:
+              - request: Request object containing queue listing parameters
+            Returns: ListQueuesResponse
+
+      Class: QueueAttributeName (v2)
+        Package: software.amazon.awssdk.services.sqs
+        Constants:
+          - VISIBILITY_TIMEOUT: The length of time (in seconds) that a message received from a queue will be invisible to other receiving components.
+          - DELAY_SECONDS: The time in seconds for which the delivery of all messages in the queue is delayed.
+          - MAXIMUM_MESSAGE_SIZE: The limit of how many bytes a message can contain before Amazon SQS rejects it.
+          - MESSAGE_RETENTION_PERIOD: The number of seconds Amazon SQS retains a message.
+          - POLICY: The queue's policy.
+          - RECEIVE_MESSAGE_WAIT_TIME_SECONDS: The time for which a ReceiveMessage call will wait for a message to arrive.
+          - REDRIVE_POLICY: The parameters for the dead letter queue functionality of the source queue.
+          - APPROXIMATE_NUMBER_OF_MESSAGES: The approximate number of visible messages in a queue.
+
+      Interface: ServiceBusAdministrationClient
+        Package: com.azure.messaging.servicebus.administration
+        Methods:
+          - createQueue(String queueName)
+            Description: Creates a queue with the given name.
+            Parameters:
+              - queueName: Name of the queue to create
+            Returns: QueueProperties
+          - createQueue(QueueProperties queueProperties)
+            Description: Creates a queue with the given properties.
+            Parameters:
+              - queueProperties: Properties of the queue to create
+            Returns: QueueProperties
+          - deleteQueue(String queueName)
+            Description: Deletes a queue with the given name.
+            Parameters:
+              - queueName: Name of the queue to delete
+            Returns: void
+          - getQueue(String queueName)
+            Description: Gets a queue with the given name.
+            Parameters:
+              - queueName: Name of the queue to get
+            Returns: QueueProperties
+          - listQueues()
+            Description: Lists all the queues in the Service Bus namespace.
+            Returns: PagedIterable<QueueProperties>
+          - listQueues(String queueNamePrefix)
+            Description: Lists all the queues in the Service Bus namespace whose names start with the given prefix.
+            Parameters:
+              - queueNamePrefix: Prefix to filter the queues by
+            Returns: PagedIterable<QueueProperties>
+
+      Class: CreateQueueOptions
+        Package: com.azure.messaging.servicebus.administration.models
+        Methods:
+          - CreateQueueOptions()
+            Description: Represents the set of options that can be specified for the creation of a queue.
+          - setLockDuration(Duration lockDuration)
+            Description: Sets the duration of the lock (equivalent to SQS visibility timeout).
+            Parameters:
+              - lockDuration: Duration for which a message is locked for other receivers
+            Returns: CreateQueueOptions
+          - setMaxSizeInMegabytes(long maxSizeInMegabytes)
+            Description: Sets the maximum size of the queue in megabytes.
+            Parameters:
+              - maxSizeInMegabytes: Maximum size of the queue in MB
+            Returns: CreateQueueOptions
+          - setMaxDeliveryCount(int maxDeliveryCount)
+            Description: Sets the maximum delivery count for messages before they are moved to the dead-letter queue.
+            Parameters:
+              - maxDeliveryCount: Maximum delivery attempts before message is moved to DLQ
+            Returns: CreateQueueOptions
+          - setDefaultMessageTimeToLive(Duration defaultMessageTimeToLive)
+            Description: Sets the default message time to live for the queue (equivalent to SQS message retention period).
+            Parameters:
+              - defaultMessageTimeToLive: Default time to live for messages
+            Returns: CreateQueueOptions
+          - setAutoDeleteOnIdle(Duration autoDeleteOnIdle)
+            Description: Sets the duration after which an idle queue is automatically deleted.
+            Parameters:
+              - autoDeleteOnIdle: Duration after which to delete an idle queue
+            Returns: CreateQueueOptions
+
+      Class: QueueProperties
+        Package: com.azure.messaging.servicebus.administration.models
+        Methods:
+          - getName()
+            Description: Gets the name of the queue.
+            Returns: String
+          - setLockDuration(Duration lockDuration)
+            Description: Sets the duration of the lock (equivalent to SQS visibility timeout).
+            Parameters:
+              - lockDuration: Duration for which a message is locked for other receivers
+            Returns: QueueProperties
+          - setMaxSizeInMegabytes(long maxSizeInMegabytes)
+            Description: Sets the maximum size of the queue in megabytes.
+            Parameters:
+              - maxSizeInMegabytes: Maximum size of the queue in MB
+            Returns: QueueProperties
+          - setRequiresDuplicateDetection(boolean requiresDuplicateDetection)
+            Description: Sets whether the queue requires duplicate detection.
+            Parameters:
+              - requiresDuplicateDetection: True if duplicate detection is required, false otherwise
+            Returns: QueueProperties
+          - setRequiresSession(boolean requiresSession)
+            Description: Sets whether the queue requires sessions.
+            Parameters:
+              - requiresSession: True if sessions are required, false otherwise
+            Returns: QueueProperties
+          - setMaxDeliveryCount(int maxDeliveryCount)
+            Description: Sets the maximum delivery count for messages before they are moved to the dead-letter queue.
+            Parameters:
+              - maxDeliveryCount: Maximum delivery attempts before message is moved to DLQ
+            Returns: QueueProperties
+          - setDefaultMessageTimeToLive(Duration defaultMessageTimeToLive)
+            Description: Sets the default message time to live for the queue (equivalent to SQS message retention period).
+            Parameters:
+              - defaultMessageTimeToLive: Default time to live for messages
+            Returns: QueueProperties
+          - setAutoDeleteOnIdle(Duration autoDeleteOnIdle)
+            Description: Sets the duration after which an idle queue is automatically deleted.
+            Parameters:
+              - autoDeleteOnIdle: Duration after which to delete an idle queue
+            Returns: QueueProperties
+
+      Interface: PagedIterable<T>
+        Package: com.azure.core.util.paging
+        Methods:
+          - stream()
+            Description: Gets a stream of elements in this sequence.
+            Returns: Stream<T>
+          - iterator()
+            Description: Returns an iterator over the elements in this sequence.
+            Returns: Iterator<T>
+          - streamByPage()
+            Description: Gets a stream of pages in this sequence.
+            Returns: Stream<PagedResponse<T>>
+
+      Remember that unlike AWS SQS which allows for programmatic queue creation in application code, Azure Service Bus typically uses a model where queues are created during infrastructure provisioning or via management API. Consider shifting queue creation logic to deployment time or administrative setup scripts when appropriate.

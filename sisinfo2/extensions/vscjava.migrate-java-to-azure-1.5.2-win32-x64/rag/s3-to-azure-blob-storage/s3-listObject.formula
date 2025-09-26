@@ -1,0 +1,142 @@
+name: 'Migrate S3client listObject to Azure Blob Storage listBlobs'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    ListObjectsV2Request|ListObjectsV2
+
+steps:
+  - description: "Migrate s3client with listObjects API to Azure Blob Storage listBlobs"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Amazon S3 API to the Azure Storage Blob API while maintaining the same functionality. Below is a reference to the relevant Azure Storage Blob APIs for your convenience. You can tell whether it's an aws or Azure API from the package name.
+      Try replace all references to S3 APIs with equivalent Azure Storage Blob APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+
+      Note:
+        1. You should pay special attention to list requests that has filters, you can use the ListBlobsOptions class to achieve more during list operation.
+        2. List APIs in Azure Storage Blob side don't need to control the page logic or continuationToken. It's take cared by SDK itself.
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Interface: S3Client
+        Package: software.amazon.awssdk.services.s3
+        Methods:
+        - default ListObjectsV2Response listObjectsV2(ListObjectsV2Request listObjectsV2Request) throws NoSuchBucketException, AwsServiceException, SdkClientException, S3Exception
+          Description: Returns some or all (up to 1,000) of the objects in a bucket with each request. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. A 200 OK response can contain valid or invalid XML. Make sure to design your application to parse the contents of the response and handle it appropriately.
+          Parameters:
+            - listObjectsV2Request:
+          Returns: Result of the ListObjectsV2 operation returned by the service.
+
+      Class: ListObjectsV2Request
+        Package:software.amazon.awssdk.services.s3.model
+        Methods:
+          - public static ListObjectsV2Request.Builder builder()
+
+      Class: ListObjectsV2Response
+        Package: software.amazon.awssdk.services.s3.model
+        Methods:
+          - List<S3Object> contents()
+            Description: Metadata about each object returned. Attempts to modify the collection returned by this method will result in an UnsupportedOperationException. This method will never return null. If you would like to know whether the service returned this field (so that you can differentiate between null and empty), you can use the hasContents() method.
+            Returns: Metadata about each object returned.
+          - public final String name()
+            Description: The bucket name.
+            Returns: The bucket name.
+          - public final String prefix()
+            Description: Keys that begin with the indicated prefix.
+            Returns: Keys that begin with the indicated prefix.
+          - public final String delimiter()
+            Description: Causes keys that contain the same string between the prefix and the first occurrence of the delimiter to be rolled up into a single result element in the CommonPrefixes collection. These rolled-up keys are not returned elsewhere in the response. Each rolled-up result counts as only one return against the MaxKeys value.
+            Returns: Causes keys that contain the same string between the prefix and the first occurrence of the delimiter to be rolled up into a single result element in the CommonPrefixes collection. These rolled-up keys are not returned elsewhere in the response. Each rolled-up result counts as only one return against the MaxKeys value.
+
+      Interface: ListObjectsV2Request.Builder
+        Methods:
+          - ListObjectsV2Request.Builder bucket(String bucket)
+            Description: The bucket name to which the PUT action was initiated.
+            Parameters:
+            - bucket: Directory buckets - When you use this operation with a directory bucket, you must use virtual-hosted-style requests in the format Bucket-name.s3express-zone-id.region-code.amazonaws.com. Path-style requests are not supported. Directory bucket names must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket names must follow the format bucket-base-name--zone-id--x-s3 (for example, DOC-EXAMPLE-BUCKET--usw2-az1--x-s3). For information about bucket naming restrictions, see Directory bucket naming rules in the Amazon S3 User Guide.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - ListObjectsV2Request.Builder delimiter(String delimiter)
+            Description: A delimiter is a character that you use to group keys.
+            Parameters:
+            - delimiter: A delimiter is a character that you use to group keys.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - ListObjectsV2Request.Builder maxKeys(Integer maxKeys)
+            Description: Sets the maximum number of keys returned in the response. By default, the action returns up to 1,000 key names. The response might contain fewer keys but will never contain more.
+            Parameters:
+            - maxKeys: Sets the maximum number of keys returned in the response. By default, the action returns up to 1,000 key names. The response might contain fewer keys but will never contain more.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - ListObjectsV2Request.Builder prefix(String prefix)
+            Description: Limits the response to keys that begin with the specified prefix.
+            Parameters:
+            - prefix: Limits the response to keys that begin with the specified prefix.
+            Returns: Returns a reference to this object so that method calls can be chained together.
+          - public final String continuationToken()
+            Description: ContinuationToken indicates to Amazon S3 that the list is being continued on this bucket with a token. ContinuationToken is obfuscated and is not a real key. You can use this ContinuationToken for pagination of the list results.
+            Returns: ContinuationToken indicates to Amazon S3 that the list is being continued on this bucket with a token. ContinuationToken is obfuscated and is not a real key. You can use this ContinuationToken for pagination of the list results.
+
+      Class BlobServiceClient
+        Package: com.azure.storage.blob
+        Methods:
+          - public BlobContainerClient getBlobContainerClient(String containerName)
+            Description: Initializes a BlobContainerClient object pointing to the specified container. This method does not create a container. It simply constructs the URL to the container and offers access to methods relevant to containers.
+            Parameters:
+            - containerName: The name of the container to point to.
+            Returns: A BlobContainerClient object pointing to the specified container.
+
+      Class BlobContainerClient
+        Package: com.azure.storage.blob
+        Methods:
+        - public BlobClient getBlobClient(String blobName)
+          Description: Initializes a new BlobClient object by concatenating blobName to the end of ContainerAsyncClient's URL. The new BlobClient uses the same request policy pipeline as the ContainerAsyncClient.
+          Parameters:
+          - blobName: A String representing the name of the blob. If the blob name contains special characters, pass in the url encoded version of the blob name.
+          Returns: A new BlobClient object which references the blob with the specified name in this container.
+        - public PagedIterable<BlobItem> listBlobs()
+          Descriptions: Returns a lazy loaded list of blobs in this container, with folder structures flattened. The returned PagedIterable<T> can be consumed through while new items are automatically retrieved as needed.
+          Parameters: None
+          Returns: The listed blobs, flattened. Blob names are returned in lexicographic order.
+        - public PagedIterable<BlobItem> listBlobs(ListBlobsOptions options, String continuationToken, Duration timeout)
+          Descriptions: Returns a lazy loaded list of blobs in this container, with folder structures flattened. The returned PagedIterable<T> can be consumed through while new items are automatically retrieved as needed.
+          Parameters:
+          - options: A ListBlobsOptions object. If iterating by page, the page size passed to byPage methods,
+            such as PagedIterable#iterableByPage(int), will be preferred over the value set in these options.
+          - continuationToken: A String identifying the portion of the list to be returned with the next list operation.
+          - timeout: A Duration specifying an optional timeout value. If the operation exceeds this duration,
+            a RuntimeException will be raised.
+          Returns: A PagedIterable containing the listed blobs, flattened.
+        - public PagedIterable<BlobItem> listBlobs(ListBlobsOptions options, Duration timeout)
+          Description: Returns a lazy-loaded list of blobs in this container, with folder structures flattened. The returned PagedIterable<T> can be consumed while new items are automatically retrieved as needed. Blob names are returned in lexicographic order.
+          Parameters:
+          - options: A ListBlobsOptions object. If iterating by page, the page size passed to byPage methods,
+            such as PagedIterable#iterableByPage(int), will be preferred over the value set in these options.
+          - timeout: A Duration specifying an optional timeout value. If the operation exceeds this duration,
+            a RuntimeException will be raised.
+          Returns: A PagedIterable containing the listed blobs, flattened.
+
+      Class ListBlobsOptions
+        Package: com.azure.storage.blob.models
+        Methods:
+        - public ListBlobsOptions setDetails(BlobListDetails details)
+          Parameters:
+          - details: The details for listing specific blobs.
+          Returns: The updated ListBlobsOptions object.
+        - public ListBlobsOptions setMaxResultsPerPage(Integer maxResultsPerPage)
+          Description: Specifies the maximum number of blobs to return, including all BlobPrefix elements. If the request does not specify maxResultsPerPage or specifies a value greater than 5,000, the server will return up to 5,000 items.
+          Parameters:
+          - maxResultsPerPage: The number of blobs to be returned in a single response.
+          Returns: The updated ListBlobsOptions object.
+        - public ListBlobsOptions setPrefix(String prefix)
+          Description: Filters the results to return only blobs whose names begin with the specified prefix. May be null to return all blobs.
+          Parameters:
+          - prefix: A prefix that a blob must match to be returned.
+          Returns: The updated ListBlobsOptions object.
+
+      Class BlobClient
+        Package: com.azure.storage.blob
+        Note: `The package of `BlobClient` is com.azure.storage.blob and the package of `BlobClientBase` is com.azure.storage.blob.specialized, don't make mistake here.
+        Methods:
+        - public BlobProperties getProperties()
+          Description: Returns the blob's metadata and properties.
+          Returns: The blob properties and metadata.

@@ -1,0 +1,27 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "ehcache.xml",
+      "nested/ehcache.xml",
+      "config/ehcache.xml"
+    ],
+    "shouldNotMatch": [
+      "application.properties",
+      "nested/application.yml",
+      "config/redis-config.xml"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "<ehcache xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"ehcache.xsd\">",
+      "<cache name=\"userCache\" maxElementsInMemory=\"5000\" eternal=\"false\" timeToIdleSeconds=\"300\" timeToLiveSeconds=\"600\" memoryStoreEvictionPolicy=\"LRU\" />",
+      "<diskStore path=\"java.io.tmpdir/ehcache\" />",
+      "<defaultCache maxElementsInMemory=\"10000\" eternal=\"false\" timeToIdleSeconds=\"600\" timeToLiveSeconds=\"1200\" memoryStoreEvictionPolicy=\"LFU\" />"
+    ],
+    "shouldNotMatch": [
+      "<redis-config>",
+      "spring.data.redis.host=localhost",
+      "# Redis configuration in application.properties"
+    ]
+  }
+}

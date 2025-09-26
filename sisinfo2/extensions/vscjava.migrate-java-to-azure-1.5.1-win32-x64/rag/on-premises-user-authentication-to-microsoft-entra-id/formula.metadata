@@ -1,0 +1,4 @@
+group:
+  id: on-premises-user-authentication-to-microsoft-entra-id
+  displayName: On-Premises Authentication to Microsoft Entra ID
+  description: On-Premises Authentication to Microsoft Entra ID

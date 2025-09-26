@@ -1,0 +1,21 @@
+name: 'Update properties for user authentication to Microsoft Entra ID authentication'
+description: 'Update properties for user authentication to Microsoft Entra ID authentication.'
+
+codeLocation:
+  type: textsearch
+  filePattern: "**/application{,-*}.{yml,yaml,properties}"
+  codePattern: ".*"
+
+steps:
+  - description: "Update properties for user authentication to Microsoft Entra ID authentication"
+    type: "instruction"
+    content: |
+      Your task is converting the current project to login by Microsoft Entra ID (formerly Azure Active Directory). Your modification should satisfy these requirements:
+        - These properties should be added:
+          - spring.cloud.azure.active-directory.enabled: true
+          - spring.cloud.azure.active-directory.profile.tenant-id: ${AZURE_TENANT_ID}
+          - spring.cloud.azure.active-directory.credential.client-id: ${AZURE_CLIENT_ID}
+          - spring.cloud.azure.active-directory.credential.client-secret: ${AZURE_CLIENT_SECRET}
+        - Add a new comment for the newly added properties:
+          - Refer to this link to get more information about these properties: https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/spring-security-support
+        - Delete all properties that will not take effect due to using the new authentication method.

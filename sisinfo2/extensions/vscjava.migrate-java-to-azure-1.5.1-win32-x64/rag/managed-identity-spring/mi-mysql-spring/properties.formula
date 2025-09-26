@@ -1,0 +1,28 @@
+name: "[Spring] Add properties for Managed Identity in Azure MySQL"
+description: "Add properties for managed identity in the configuration files."
+codeLocation:
+  type: "textsearch"
+  codePattern: ".*"
+  filePattern: "**/application{,-*}.{yml,yaml,properties}"
+steps:
+  - description: "Add properties for Managed Identity authentication"
+    type: "instruction"
+    content: |
+      Your task is to migrate a configuration file to use managed identity for authentication in Azure MySQL instead of a password.
+      If the configuration file is yaml, please ensure the indentation and format is correct and consistent with the rest of the file.
+
+      1. Revise the configuration to use Azure managed identity:
+      # the username of datasource SHOULD be the name of managed identity
+      spring.datasource.username=<your_managed_identity_name>
+      spring.cloud.azure.credential.managed-identity-enabled=true
+
+      2. Enable Azure managed identity passwordless authentication under spring.datasource config:
+      spring.datasource.azure.passwordless-enabled=true
+
+      3. If the spring.datasource.url property is missing, please add it.
+      spring.datasource.url=jdbc:mysql://${AZURE_MYSQL_SERVER_NAME}.mysql.database.azure.com:3306/${AZURE_MYSQL_DATABASE_NAME}
+
+      4. Remove the configuration for the password of the **MySQL** database:
+        - Removing password segments from JDBC connection strings (typically after the & symbol)
+        - Removing the password property from the configuration file, e.g. spring.datasource.password
+      Note: please do not remove the password property if it is used for other purposes.

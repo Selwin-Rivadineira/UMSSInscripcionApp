@@ -1,0 +1,594 @@
+name: "JavaMail send email API to Azure Communication Service email"
+description: "Migrate JavaMail send email API to Azure Communication Service email API"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    Transport|JavaMailSender|org.apache.commons.mail|org.simplejavamail.api.mailer
+
+steps:
+  - description: "JavaMail send email API to Azure Communication Service email"
+    type: "instruction"
+    content: |
+      Your task is to migrate a Java file from using the Java Mail (javax.mail.*), Spring Java Mail (org.springframework.mail.*), Simple Java Mail (org.simplejavamail.*) and Apache Commons Email (org.apache.commons.mail.*) to the Azure Communication Service email API while maintaining the same functionality. Below is a reference to the relevant APIs for your convenience. You can tell whether it's JavaMail or Azure API from the package name.
+      Try replace all references to Java Mail (javax.mail.*), Spring Java Mail (org.springframework.mail.*), Simple Java Mail (org.simplejavamail.*) and Apache Commons Email (org.apache.commons.mail.*) APIs with equivalent Azure Communication Service email APIs, using the provided API descriptions as guidance.
+      Ensure the resulting code is clean, efficient, and preserves the original functionality. Keep all the irrelevant code/comment unchanged.
+      Some of the methods are of the same name under different class, please pay attention to the type before using.
+      Note:
+      Note:
+        1. By default, use `DefaultAzureCredential` from the `com.azure.identity` package to authenticate the `EmailClient`. For example:
+           ```java
+           EmailClient emailClient = new EmailClientBuilder()
+               .endpoint("https://<resource-name>.communication.azure.com/")
+               .credential(new DefaultAzureCredentialBuilder().build())
+               .buildClient();
+           ```
+        2. Consider calling `getFinalResult` after `EmailClient.beginSend` and check for the `EmailSendResult` & `EmailSendStatus`
+      Below are the APIs provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+
+      Class: Transport extends Service
+        Description: An abstract class that models a message transport. Subclasses provide actual implementations.
+        Package: javax.mail.Transport
+        Methods:
+          - public static void send(Message msg)
+            Description: Send a message. The message will be sent to all recipient addresses specified in the message (as returned from the Message method getAllRecipients), using message transports appropriate to each address. The send method calls the saveChanges method on the message before sending it.
+            Parameters:
+              - msg - the message to send
+            Returns: N/A
+          - public static void send(Message msg, Address[] addresses)
+            Description: Send the message to the specified addresses, ignoring any recipients specified in the message itself. The send method calls the saveChanges method on the message before sending it.
+            Parameters:
+              - msg - the message to send
+              - addresses - the addresses to which to send the message
+            Returns: N/A
+          - public void addTransportListener(TransportListener l)
+            Description: Add a listener for Transport events.
+            Parameters:
+              - l - the Listener for Transport events
+            Returns: N/A
+          - public void removeTransportListener(TransportListener l)
+            Description: Remove a listener for Transport events.
+            Parameters:
+              - l - the listener
+            Returns: N/A
+          - protected void notifyTransportListeners(int type, Address[] validSent, Address[] validUnsent, Address[] invalid, Message msg)
+            Description: Notify all TransportListeners. Transport implementations are expected to use this method to broadcast TransportEvents.
+            Parameters:
+              - type - the TransportEvent type
+              - validSent - valid addresses to which message was sent
+              - validUnsent - valid addresses to which message was not sent
+              - invalid - the invalid addresses
+              - msg - the message
+            Returns: N/A
+
+      Interface: JavaMailSender extends MailSender
+        Description: Extended MailSender interface for JavaMail, supporting MIME messages both as direct arguments and through preparation callbacks. Typically used in conjunction with the MimeMessageHelper class for convenient creation of JavaMail MimeMessages, including attachments etc.
+        Note: this can be injected into files via @Autowired annotation
+        Package: org.springframework.mail.javamail
+        Methods:
+          - MimeMessage createMimeMessage()
+            Description: Create a new JavaMail MimeMessage for the underlying JavaMail Session of this sender. Needs to be called to create MimeMessage instances that can be prepared by the client and passed to send(MimeMessage).
+            Parameters: N/A
+            Returns: the new MimeMessage instance
+          - default void send(MimeMessage mimeMessage)
+            Description: Send the given JavaMail MIME message. The message needs to have been created with createMimeMessage().
+            Parameters:
+              - mimeMessage - message to send
+            Returns: N/A
+          - void send(MimeMessage... mimeMessages)
+            Description: Send the given array of JavaMail MIME messages in batch. The messages need to have been created with createMimeMessage().
+            Parameters:
+              - mimeMessages - messages to send
+            Returns: N/A
+
+      Class: Email
+        Description: Sends simple Internet email messages without attachments.
+        Package: org.apache.commons.mail
+        Methods:
+          - public Email addBcc(String email) throws EmailException
+            Description: Adds a blind BCC recipient to the email. The email address will also be used as the personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            Returns: An Email.
+          - public Email addBcc(String... emails) throws EmailException
+            Description: Adds an array of blind BCC recipients to the email. The email addresses will also be used as the personal name. The names will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - emails - A String array.
+            Returns: An Email.
+          - public Email addBcc(String email, String name) throws EmailException
+            Description: Adds a blind BCC recipient to the email using the specified address and the specified personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            Returns: An Email.
+          - public Email addBcc(String email, String name, String charset) throws EmailException
+            Description: Adds a blind BCC recipient to the email using the specified address, personal name, and charset encoding for the name.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            - charset - The charset to encode the name with.
+            Returns: An Email.
+          - public Email addCc(String email) throws EmailException
+            Description: Adds a recipient CC to the email. The email address will also be used as the personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            Returns: An Email.
+          - public Email addCc(String... emails) throws EmailException
+            Description: Adds an array of CC recipients to the email. The email addresses will also be used as the personal name. The names will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - emails - A String array.
+            Returns: An Email.
+          - public Email addCc(String email, String name) throws EmailException
+            Description: Adds a recipient CC to the email using the specified address and the specified personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            Returns: An Email.
+          - public Email addCc(String email, String name, String charset) throws EmailException
+            Description: Adds a recipient CC to the email using the specified address, personal name, and charset encoding for the name.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            - charset - The charset to encode the name with.
+            Returns: An Email.
+          - public void addHeader(String name, String value)
+            Description: Adds a header ( name, value ) to the headers Map.
+            Parameters:
+            - name - A String with the name.
+            - value - A String with the value.
+          - public Email addReplyTo(String email) throws EmailException
+            Description: Adds a reply to address to the email. The email address will also be used as the personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            Returns: An Email.
+          - public Email addReplyTo(String email, String name) throws EmailException
+            Description: Adds a reply to address to the email using the specified address and the specified personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            Returns: An Email.
+          - public Email addReplyTo(String email, String name, String charset) throws EmailException
+            Description: Adds a reply to address to the email using the specified address, personal name, and charset encoding for the name.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            - charset - The charset to encode the name with.
+            Returns: An Email.
+          - public Email addTo(String email) throws EmailException
+            Description: Adds a recipient TO to the email. The email address will also be used as the personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            Returns: An Email.
+          - public Email addTo(String... emails) throws EmailException
+            Description: Adds a list of TO recipients to the email. The email addresses will also be used as the personal names. The names will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - emails - A String array.
+            Returns: An Email.
+          - public Email addTo(String email, String name) throws EmailException
+            Description: Adds a recipient TO to the email using the specified address and the specified personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            Returns: An Email.
+          - public Email addTo(String email, String name, String charset) throws EmailException
+            Description: Adds a recipient TO to the email using the specified address, personal name, and charset encoding for the name.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            - charset - The charset to encode the name with.
+            Returns: An Email.
+          - public void buildMimeMessage() throws EmailException
+            Description: Builds the MimeMessage. Please note that a user rarely calls this method directly and only if he/she is interested in the sending the underlying MimeMessage without commons-email.
+          - public Authenticator getAuthenticator()
+            Description: Gets the authenticator.
+            Returns: the authenticator.
+          - public List<InternetAddress> getBccAddresses()
+            Description: Gets the list of "Bcc" addresses.
+            Returns: List addresses
+          - public String getBounceAddress()
+            Description: Gets the "bounce address" of this email.
+            Returns: the bounce address as string
+          - public List<InternetAddress> getCcAddresses()
+            Description: Gets the list of "CC" addresses.
+            Returns: List addresses
+          - public String getCharsetName()
+            Description: Gets the Charset.
+            Returns: the Charset.
+          - public Object getContent()
+            Description: Gets the content.
+            Returns: the content.
+          - public String getContentType()
+            Description: Gets the content type.
+            Returns: the content type.
+          - public MimeMultipart getEmailBody()
+            Description: Gets the email body.
+            Returns: the email body.
+          - public InternetAddress getFromAddress()
+            Description: Gets the sender of the email.
+            Returns: from address
+          - public String getHeader(String header)
+            Description: Gets the specified header.
+            Parameters:
+            - header - A string with the header.
+            Returns: The value of the header, or null if no such header.
+          - public Map<String,String> getHeaders()
+            Description: Gets all headers on an Email.
+            Returns: a Map of all headers.
+          - public String getHostName()
+            Description: Gets the host name of the SMTP server,
+            Returns: host name
+          - public Session getMailSession() throws EmailException
+            Description: Gets the mail session used when sending this Email, creating the Session if necessary. When a mail session is already initialized setting the session related properties will cause an IllegalStateException.
+            Returns: A Session.
+          - public MimeMessage getMessage()
+            Description: Gets the message.
+            Returns: the message.
+          - public MimeMessage getMimeMessage()
+            Description: Gets the internal MimeMessage. Please note that the MimeMessage is built by the buildMimeMessage() method.
+            Returns: the MimeMessage
+          - public String getPopHost()
+            Description: Gets the POP3 host.
+            Returns: the POP3 host.
+          - public String getPopPassword()
+            Description: Gets the POP3 password.
+            Returns: the POP3 password.
+          - public String getPopUserName()
+            Description: Gets the POP3 user name.
+            Returns: the POP3 user name.
+          - public List<InternetAddress> getReplyToAddresses()
+            Description: Gets the list of "Reply-To" addresses.
+            Returns: List addresses
+          - public Date getSentDate()
+            Description: Gets the sent date for the email.
+            Returns: date to be used as the sent date for the email
+          - public String getSmtpPort()
+            Description: Gets the listening port of the SMTP server.
+            Returns: SMTP port
+          - public int getSocketConnectionTimeout()
+            Description: Gets the socket connection timeout value in milliseconds.
+            Returns: the timeout in milliseconds.
+          - public int getSocketTimeout()
+            Description: Gets the socket I/O timeout value in milliseconds.
+            Returns: the socket I/O timeout
+          - public String getSslSmtpPort()
+            Description: Gets the current SSL port used by the SMTP transport.
+            Returns: the current SSL port used by the SMTP transport
+          - public String getSubject()
+            Description: Gets the subject of the email.
+            Returns: email subject
+          - public List<InternetAddress> getToAddresses()
+            Description: Gets the list of "To" addresses.
+            Returns: List addresses
+          - public boolean isDebug()
+            Description: Tests whether debug is on.
+            Returns: whether debug is on.
+          - public boolean isPopBeforeSmtp()
+            Description: Tests whether to use POP3 before SMTP, and if so the settings.
+            Returns: whether to use POP3 before SMTP, and if so the settings.
+          - public boolean isSendPartial()
+            Description: Tests whether partial sending of email is enabled.
+            Returns: true if sending partial email is enabled.
+          - public boolean isSSL()
+            Description: since 1.3, use isSSLOnConnect() instead. Tests whether SSL/TLS encryption for the transport is currently enabled (SMTPS/POPS). See EMAIL-105 for reason of deprecation.
+            Returns: true if SSL enabled for the transport.
+          - public boolean isSSLCheckServerIdentity()
+            Description: Tests whether the server identity checked as specified by RFC 2595
+            Returns: true if the server identity is checked.
+          - public boolean isSSLOnConnect()
+            Description: Tests whether SSL/TLS encryption for the transport is currently enabled (SMTPS/POPS).
+            Returns: true if SSL enabled for the transport.
+          - public boolean isStartTLSEnabled()
+            Description: Tests whether the client is configured to try to enable STARTTLS.
+            Returns: true if using STARTTLS for authentication, false otherwise.
+          - public boolean isStartTLSRequired()
+            Description: Tests whether the client is configured to require STARTTLS.
+            Returns: true if using STARTTLS for authentication, false otherwise.
+          - public boolean isTLS()
+            Description: since 1.3, use isStartTLSEnabled() instead. Tests whether the client is configured to try to enable STARTTLS. See EMAIL-105 for reason of deprecation.
+            Returns: true if using STARTTLS for authentication, false otherwise.
+          - public String send() throws EmailException
+            Description: Sends the email. Internally we build a MimeMessage which is afterwards sent to the SMTP server.
+            Returns: the message id of the underlying MimeMessage
+          - public String sendMimeMessage() throws EmailException
+            Description: Sends the previously created MimeMessage to the SMTP server.
+            Returns: the message id of the underlying MimeMessage
+          - public void setAuthentication(String userName, String password)
+            Description: Sets the userName and password if authentication is needed. If this method is not used, no authentication will be performed. This method will create a new instance of DefaultAuthenticator using the supplied parameters.
+            Parameters:
+            - userName - User name for the SMTP server
+            - password - password for the SMTP server
+          - public void setAuthenticator(Authenticator authenticator)
+            Description: Sets the Authenticator to be used when authentication is requested from the mail server. This method should be used when your outgoing mail server requires authentication. Your mail server must also support RFC2554.
+            Parameters:
+            - authenticator - the Authenticator object.
+          - public Email setBcc(Collection<InternetAddress> collection) throws EmailException
+            Description: Sets a list of "BCC" addresses. All elements in the specified Collection are expected to be of type java.mail.internet. InternetAddress.
+            Parameters:
+            - collection - collection of InternetAddress objects
+            Returns: An Email.
+          - public Email setBounceAddress(String email)
+            Description: Sets the "bounce address" - the address to which undeliverable messages will be returned. If this value is never set, then the message will be sent to the address specified with the System property "mail.smtp.from", or if that value is not set, then to the "from" address.
+            Parameters:
+            - email - A String.
+            Returns: An Email.
+          - public Email setCc(Collection<InternetAddress> collection) throws EmailException
+            Description: Sets a list of "CC" addresses. All elements in the specified Collection are expected to be of type java.mail.internet.InternetAddress.
+            Parameters:
+            - collection - collection of InternetAddress objects.
+            Returns: An Email.
+          - public void setCharset(String charset)
+            Description: Sets the charset of the message. Please note that you should set the charset before adding the message content.
+            Parameters:
+            - charset - A String.
+          - public void setContent(MimeMultipart mimeMultipart)
+            Description: Sets the emailBody to a MimeMultiPart
+            Parameters:
+            - mimeMultipart - aMimeMultipart
+          - public Email setContent(Object content)
+            Description: Sets the content.
+            Parameters:
+            - content - the content.
+            Returns: this.
+          - public void setContent(Object content, String contentType)
+            Description: Sets the content and contentType.
+            Parameters:
+            - content - content.
+            - contentType - content type.
+          - public Email setContentType(String contentType)
+            Description: Sets the content type.
+            Parameters:
+            - contentType - the content type.
+            Returns: this.
+          - public void setDebug(boolean debug)
+            Description: Sets the display of debug information.
+            Parameters:
+            - debug - A boolean.
+          - public Email setFrom(String email) throws EmailException
+            Description: Sets the FROM field of the email to use the specified address. The email address will also be used as the personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            Returns: An Email.
+          - public Email setFrom(String email, String name) throws EmailException
+            Description: Sets the FROM field of the email to use the specified address and the specified personal name. The name will be encoded by the charset of setCharset(String). If it is not set, it will be encoded using the Java platform's default charset (UTF-16) if it contains non-ASCII characters; otherwise, it is used as is.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            Returns: An Email.
+          - public Email setFrom(String email, String name, String charset) throws EmailException
+            Description: Sets the FROM field of the email to use the specified address, personal name, and charset encoding for the name.
+            Parameters:
+            - email - A String.
+            - name - A String.
+            - charset - The charset to encode the name with.
+            Returns: An Email.
+          - public Email setFromAddress(InternetAddress fromAddress)
+            Description: Sets the From address.
+            Parameters:
+            - fromAddress - the From address.
+            Returns: this.
+          - public void setHeaders(Map<String,String> map)
+            Description: Sets the mail headers. Example: X-Mailer: Sendmail, X-Priority: 1( highest ) or 2( high ) 3( normal ) 4( low ) and 5( lowest ) Disposition-Notification-To: user@domain.net
+            Parameters:
+            - map - A Map.
+          - public void setHostName(String hostName)
+            Description: Sets the hostname of the outgoing mail server.
+            Parameters:
+            - hostName - aHostName
+          - public void setMailSession(Session session)
+            Description: Sets a mail Session object to use. Please note that passing a user name and password (in the case of mail authentication) will create a new mail session with a DefaultAuthenticator. This is a convenience but might come unexpected. If mail authentication is used but NO user name and password is supplied the implementation assumes that you have set a authenticator and will use the existing mail session (as expected).
+            Parameters:
+            - session - mail session to be used
+          - public void setMailSessionFromJNDI(String jndiName) throws NamingException
+            Description: Sets a mail Session object from a JNDI directory.
+            Parameters:
+            - jndiName - name of JNDI resource (javax.mail.Session type), resource if searched in java:comp/env if name does not start with "java:"
+          - public void setMessage(MimeMessage message)
+            Description: Sets the MIME message.
+            Parameters:
+            - message - the MIME message.
+          - public abstract Email setMsg(String msg) throws EmailException
+            Description: Sets the content of the mail. It should be overridden by the subclasses.
+            Parameters:
+            - msg - A String.
+            Returns: An Email.
+          - public Email setPopBeforeSmtp(boolean popBeforeSmtp)
+            Description: Sets whether to use POP3 before SMTP, and if so the settings.
+            Parameters:
+            - popBeforeSmtp - whether to use POP3 before SMTP, and if so the settings.
+            Returns: this.
+          - public void setPopBeforeSmtp(boolean popBeforeSmtp, String popHost, String popUserName, String popPassword)
+            Description: Sets details regarding "POP3 before SMTP" authentication.
+            Parameters:
+            - popBeforeSmtp - Whether or not to log into POP3 server before sending mail.
+            - popHost - The POP3 host to use.
+            - popUserName - The POP3 user name.
+            - popPassword - The POP3 password.
+          - public Email setPopHost(String popHost)
+            Description: Sets the POP3 host.
+            Parameters:
+            - popHost - The POP3 host.
+            Returns: this.
+          - public Email setPopPassword(String popPassword)
+            Description: Sets the POP3 password.
+            Parameters:
+            - popPassword - the POP3 password.
+            Returns: this.
+          - public Email setPopUsername(String popUserName)
+            Description: Sets the POP3 user name.
+            Parameters:
+            - popUserName - the POP3 user name.
+            Returns: this.
+          - public Email setReplyTo(Collection<InternetAddress> collection) throws EmailException
+            Description: Sets a list of reply to addresses. All elements in the specified Collection are expected to be of type java.mail.internet. InternetAddress.
+            Parameters:
+            - collection - collection of InternetAddress objects
+            Returns: An Email.
+          - public Email setSendPartial(boolean sendPartial)
+            Description: Sets whether the email is partially send in case of invalid addresses. In case the mail server rejects an address as invalid, the call to send() may throw a SendFailedException, even if partial send mode is enabled (emails to valid addresses will be transmitted). In case the email server does not reject invalid addresses immediately, but return a bounce message, no exception will be thrown by the send() method.
+            Parameters:
+            - sendPartial - whether to enable partial send mode
+            Returns: An Email.
+          - public void setSentDate(Date date)
+            Description: Sets the sent date for the email. The sent date will default to the current date if not explicitly set.
+            Parameters:
+            - date - Date to use as the sent date on the email
+          - public void setSmtpPort(int portNumber)
+            Description: Sets the non-SSL port number of the outgoing mail server.
+            Parameters:
+            - portNumber - aPortNumber
+          - public void setSocketConnectionTimeout(Duration socketConnectionTimeout)
+            Description: Sets the socket connection timeout value in milliseconds. Default is a 60 second timeout.
+            Parameters:
+            - socketConnectionTimeout - the connection timeout
+          - public void setSocketConnectionTimeout(int socketConnectionTimeout) 
+            Description: Deprecated. Use setSocketConnectionTimeout(Duration). Sets the socket connection timeout value in milliseconds. Default is a 60 second timeout.
+            Parameters:
+            - socketConnectionTimeout - the connection timeout
+          - public void setSocketTimeout(Duration socketTimeout)
+            Description: Sets the socket I/O timeout value in milliseconds. Default is 60 second timeout.
+            Parameters:
+            - socketTimeout - the socket I/O timeout
+          - public void setSocketTimeout(int socketTimeout)
+            Description: Deprecated. Use setSocketTimeout(Duration). Sets the socket I/O timeout value in milliseconds. Default is 60 second timeout.
+            Parameters:
+            - socketTimeout - the socket I/O timeout
+          - public void setSSL(boolean ssl)
+            Description: Deprecated. since 1.3, use setSSLOnConnect(boolean) instead. Sets whether SSL/TLS encryption should be enabled for the SMTP transport upon connection (SMTPS/POPS). See EMAIL-105 for reason of deprecation.
+            Parameters:
+            - ssl - whether to enable the SSL transport
+          - public Email setSSLCheckServerIdentity(boolean sslCheckServerIdentity)
+            Description: Sets whether the server identity is checked as specified by RFC 2595
+            Parameters:
+            - sslCheckServerIdentity - whether to enable server identity check
+            Returns: An Email.
+          - public Email setSSLOnConnect(boolean ssl)
+            Description: Sets whether SSL/TLS encryption should be enabled for the SMTP transport upon connection (SMTPS/POPS). Takes precedence over setStartTLSRequired(boolean). Defaults to sslSmtpPort; can be overridden by using setSslSmtpPort(String)
+            Parameters:
+            - ssl - whether to enable the SSL transport
+            Returns: An Email.
+          - public void setSslSmtpPort(String sslSmtpPort)
+            Description: Sets the SSL port to use for the SMTP transport. Defaults to the standard port, 465.
+            Parameters:
+            - sslSmtpPort - the SSL port to use for the SMTP transport
+          - public Email setStartTLSEnabled(boolean startTlsEnabled)
+            Description: Sets or disable the STARTTLS encryption.
+            Parameters:
+            - startTlsEnabled - true if STARTTLS requested, false otherwise
+            Returns: An Email.
+          - public Email setStartTLSRequired(boolean startTlsRequired)
+            Description: Sets or disable the required STARTTLS encryption. Defaults to smtpPort; can be overridden by using setSmtpPort(int)
+            Parameters:
+            - startTlsRequired - true if STARTTLS requested, false otherwise
+            Returns: An Email.
+          - public Email setSubject(String aSubject)
+            Description: Sets the email subject. Replaces end-of-line characters with spaces.
+            Parameters:
+            - aSubject - A String.
+            Returns: An Email.
+          - public void setTLS(boolean withTLS)
+            Description: Deprecated. since 1.3, use setStartTLSEnabled(boolean) instead. Sets or disable the STARTTLS encryption. Please see EMAIL-105 for the reasons of deprecation.
+            Parameters:
+            - withTLS - true if STARTTLS requested, false otherwise
+          - public Email setTo(Collection<InternetAddress> collection) throws EmailException
+            Description: Sets a list of "TO" addresses. All elements in the specified Collection are expected to be of type java.mail.internet.InternetAddress.
+            Parameters:
+            - collection - collection of InternetAddress objects.
+            Returns: An Email.
+          - public void updateContentType(String contentType)
+            Description: Updates the contentType.
+            Parameters:
+            - contentType - aContentType
+
+      Class: Email
+        Description: Email message with all necessary data for an effective mailing action, including attachments etc. Exclusively created using EmailBuilder.
+        Package: org.simplejavamail.api.email
+
+      Interface Mailer
+        Description: Mailing tool created exclusively using MailerRegularBuilder. This class is the facade to most Simple Java Mail functionality which is related to doing things with an email (server not always relevant, like with validation, S/MIME encryption etc.). The e-mail message structure is built to work with all e-mail clients and has been tested with many different webclients as well as some desktop applications. You can experiment with the various types of emails and resulting mime structure on the Simple Java mail website.
+        Package: org.simplejavamail.api.mailer
+        Methods:
+          - jakarta.mail.Session getSession()
+            Description: In case Simple Java Mail falls short somehow, you can get a hold of the internal Session instance to debug or tweak. Please let us know why you are needing this on simple-java-mail/issues.
+          - void testConnection()
+            Description: Delegates to testConnection(boolean) with async == false.
+          - @NotNull @NotNull CompletableFuture<Void> testConnection(boolean async)
+            Description: Tries to connect to the configured SMTP server, including (authenticated) proxy if set up. Note: synchronizes on the thread for sending mails so that we don't get into race condition conflicts with emails actually being sent.
+            Returns: A CompletableFuture that is completed immediately if not async.
+          - @NotNull @NotNull CompletableFuture<Void> sendMail(Email email)
+            Description: Delegates to sendMail(Email, boolean), with async = false. This method returns only when the email has been processed by the target SMTP server.
+            Returns: A CompletableFuture that is completed immediately if not async.
+          - @NotNull @NotNull CompletableFuture<Void> sendMail(Email email, boolean async)
+            Description: Processes an Email instance into a completely configured Message. First, it will apply all defaults and overrides to the email instance using EmailGovernance.produceEmailApplyingDefaultsAndOverrides(Email) . Then it will validate the email. Finally, it will process the email into a JavaMail Message object. Sends the JavaMail Message object using Session.getTransport(). It will call Service.connect() assuming all connection details have been configured in the provided Session instance and finally Transport.sendMessage(Message, jakarta.mail.Address[]). Performs a call to Message.saveChanges() as the Sun JavaMail API indicates it is needed to configure the message headers and providing a message id. If the email should be sent asynchrounously - perhaps as part of a batch, then a new thread is started using the executor for thread pooling. If the email should go through an authenticated proxy server, then the SOCKS proxy bridge is started if not already running. When the last email in a batch has finished, the proxy bridging server is shut down.
+            Parameters:
+            - email - The information for the email to be sent.
+            - async - If false, this method blocks until the mail has been processed completely by the SMTP server. If true, a new thread is started to send the email and this method returns immediately.
+            Returns: A CompletableFuture that is completed immediately if not async.
+          - boolean validate(Email email) throws MailException
+            Description: Validates an Email instance. Validation fails if the subject is missing, content is missing, or no recipients are defined or that the addresses are missing for NPM notification flags.
+            Parameters:
+            - email - The email that needs to be configured correctly.
+            Returns: Always true (throws a MailException exception if validation fails).
+
+      Class: EmailClient
+        Description: Initializes a new instance of the synchronous EmailClient type.
+        Package: com.azure.communication.email
+        Methods:
+          - public SyncPoller<EmailSendResult, EmailSendResult> beginSend(EmailMessage message)
+            Description: Queues an email message to be sent to one or more recipients.
+            Parameters:
+              - message - Message payload for sending an email.
+            Returns: the SyncPoller<T,U> for polling of status of the long running operation.
+          - public SyncPoller beginSend(EmailMessage message, Context context)
+            Description: Queues an email message to be sent to one or more recipients.
+            Parameters:
+              - message - Message payload for sending an email.
+              - context - The context to associate with this operation.
+            Returns: the SyncPoller<T,U> for polling of status of the long running operation.
+
+      Interface: SyncPoller<T, U>
+        Description: A type that offers API that simplifies the task of executing long-running operations against an Azure service.
+        Package: com.azure.core.util.polling
+        Note: don't forget to include the package while using this interface.
+        Methods:
+          - public abstract U getFinalResult()
+            Description: Retrieve the final result of the long-running operation.
+            Parameters: N/A
+            Returns: the final result of the long-running operation if there is one.
+          - public default U getFinalResult(Duration timeout)
+            Description: Retrieve the final result of the long-running operation. If polling hasn't completed this will wait for the timeout for polling to complete. In this case this API is effectively equivalent to waitForCompletion(Duration timeout) + getFinalResult().
+            Parameters:
+              - timeout - the duration to wait for polling completion.
+            Returns: the final result of the long-running operation if there is one.
+          - public abstract PollResponse poll()
+            Description: Poll once and return the poll response received.
+            Parameters: N/A
+            Returns: the poll response
+
+      Class: EmailSendResult
+        Description: Status of the long running operation.
+        Package: com.azure.communication.email.models
+        Methods:
+          - public ResponseError getError()
+            Description: Get the error property: Response error when status is a non-success terminal state.
+            Returns: the error value.
+          - public String getId()
+            Description: Get the id property: The unique id of the operation. Use a UUID.
+            Returns: the id value.
+          - public EmailSendStatus getStatus()
+            Description: Get the status property: Status of operation.
+            Returns: the status value.
+
+      Class: EmailSendStatus
+        Description: Status of operation.
+        Package: com.azure.communication.email.models
+        Fields:
+          - public static final EmailSendStatus CANCELED
+            Description: Static value Canceled for EmailSendStatus.
+          - public static final EmailSendStatus FAILED
+            Description: Static value FAILED for EmailSendStatus.
+          - public static final EmailSendStatus NOT_STARTED
+            Description: Static value NotStarted for EmailSendStatus.
+          - public static final EmailSendStatus RUNNING
+            Description: Static value Running for EmailSendStatus.
+          - public static final EmailSendStatus SUCCEEDED
+            Description: Static value Succeeded for EmailSendStatus.

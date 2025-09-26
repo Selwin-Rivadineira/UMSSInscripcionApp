@@ -1,0 +1,127 @@
+name: 'Migrate Ehcache XML configuration to Azure Cache for Redis'
+description: "Converts Ehcache XML configuration to Azure Cache for Redis application properties"
+codeLocation:
+  type: textsearch
+  filePattern: '**/ehcache.xml'
+  codePattern: >-
+    <ehcache|<cache|<diskStore|<defaultCache
+
+steps:
+  - description: "Migrate Ehcache XML configuration to Azure Cache for Redis application properties"
+    type: "instruction"
+    content: |
+      Your task is to examine an Ehcache XML configuration file and create equivalent Spring application properties for Azure Cache for Redis.
+      
+      Instead of modifying the ehcache.xml file directly, you should:
+      1. Identify key configuration elements from the ehcache.xml file
+      2. Create or update an application.properties or application.yml file with equivalent Redis settings
+      3. Provide guidance on removing the ehcache.xml file once the migration is complete
+      
+      Below are examples of Ehcache XML configurations and their Azure Redis equivalents:
+      
+      Ehcache XML configuration example:
+      ```xml
+      <ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="false">
+          
+          <diskStore path="java.io.tmpdir/ehcache" />
+          
+          <defaultCache
+              maxElementsInMemory="10000"
+              eternal="false"
+              timeToIdleSeconds="120"
+              timeToLiveSeconds="120"
+              memoryStoreEvictionPolicy="LRU" />
+              
+          <cache name="userCache"
+              maxElementsInMemory="5000"
+              eternal="false"
+              timeToIdleSeconds="300"
+              timeToLiveSeconds="600"
+              memoryStoreEvictionPolicy="LRU" />
+              
+          <cache name="productCache"
+              maxElementsInMemory="10000"
+              eternal="false"
+              timeToIdleSeconds="0"
+              timeToLiveSeconds="3600"
+              memoryStoreEvictionPolicy="LFU" />
+      </ehcache>
+      ```
+      
+      Equivalent properties in application.properties:
+      ```properties
+      # Redis Connection
+      spring.data.redis.host=<AZURE_REDIS_HOST>
+      spring.data.redis.port=6380
+      spring.data.redis.password=<ACCESS_KEY>
+      spring.data.redis.ssl.enabled=true
+      
+      # Redis Pool Configuration
+      spring.data.redis.lettuce.pool.max-active=10000
+      spring.data.redis.lettuce.pool.max-idle=8
+      spring.data.redis.lettuce.pool.min-idle=0
+      
+      # Cache TTL settings matching Ehcache configuration
+      # Note: These are applied programmatically in CacheConfig class, but listed here for reference
+      # Default cache: TTL 120 seconds
+      # userCache: TTL 600 seconds
+      # productCache: TTL 3600 seconds
+      ```
+      
+      Or equivalent configuration in application.yml:
+      ```yaml
+      spring:
+        data:
+          redis:
+            host: <AZURE_REDIS_HOST>
+            port: 6380
+            password: <ACCESS_KEY>
+            ssl:
+              enabled: true
+            lettuce:
+              pool:
+                max-active: 10000
+                max-idle: 8
+                min-idle: 0
+      
+      # Cache TTL settings matching Ehcache configuration
+      # Note: These are applied programmatically in CacheConfig class, but listed here for reference
+      # Default cache: TTL 120 seconds
+      # userCache: TTL 600 seconds
+      # productCache: TTL 3600 seconds
+      ```
+      
+      Implementation notes:
+      1. For each cache defined in ehcache.xml, identify the name and TTL settings
+      2. Map Ehcache's timeToLiveSeconds to Redis TTL in the RedisCacheManager configuration
+      3. Map maxElementsInMemory to Redis connection pool settings
+      4. Ignore diskStore settings as Redis is primarily in-memory
+      5. For Azure Cache for Redis, ensure SSL is enabled
+      6. Azure Redis specific configuration should include the correct port (typically 6380)
+      7. Provide guidance to update the corresponding CacheConfig.java file with per-cache TTL configurations to match the XML
+      
+      Reminder for application code:
+      The RedisCacheManager in Java code will need to include cache configurations that match those defined in ehcache.xml:
+      
+      ```java
+      @Bean
+      public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+          .entryTtl(Duration.ofSeconds(120)) // From defaultCache timeToLiveSeconds
+          .disableCachingNullValues();
+        
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        // From userCache in XML
+        cacheConfigurations.put("userCache", RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofSeconds(600)));
+        // From productCache in XML
+        cacheConfigurations.put("productCache", RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofSeconds(3600)));
+        
+        return RedisCacheManager.builder(connectionFactory)
+          .cacheDefaults(defaultCacheConfig)
+          .withInitialCacheConfigurations(cacheConfigurations)
+          .build();
+      }
+      ```

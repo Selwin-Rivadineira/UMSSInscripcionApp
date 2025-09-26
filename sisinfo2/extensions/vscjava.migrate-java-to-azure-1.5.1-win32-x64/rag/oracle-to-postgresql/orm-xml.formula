@@ -1,0 +1,259 @@
+name: 'Migrate ORM mapping files from Oracle to PostgreSQL'
+description: 'Update ORM mapping files for Oracle to PostgreSQL migration'
+
+codeLocation:
+  type: textsearch
+  filePattern: "**/*.xml"
+  codePattern: >-
+    resultMap|select|insert|update|delete|<if>|<where>|<foreach>|<sql>|<script>|ROWNUM|DUAL|NVL|CONNECT BY|VARCHAR2|NUMBER|PL/SQL|column=\"[A-Za-z_]+\"|table=\"[A-Za-z_]+\"|FROM\s+[A-Za-z_]+|JOIN\s+[A-Za-z_]+
+
+steps:
+  - description: "Update ORM XML mapping files for Oracle to PostgreSQL migration"
+    type: "instruction"
+    content: |
+
+      Your task is to migrate ORM mapping XML files from Oracle database settings to PostgreSQL compatibility.
+
+      Follow these steps:
+      1. Review the checklist items below in sequence
+      2. Apply each relevant modification to the XML mapping file
+      3. For each change you make, add a comment in the migrated code that includes the check item information. Example:
+        ```xml
+        <!-- Migrated from Oracle to PostgreSQL according to ORM check item 1: Use lowercase for identifiers (like table and column names) and data type (like varchar), use uppercase for SQL keywords (like SELECT, FROM, WHERE). -->
+        ```
+
+      # Check list
+
+      ORM check item 0: Don't modify the content if it's obviously not related to Oracle. For example: File named mysql-mapping.xml, file with path mysql/mapping.xml
+
+      ORM check item 1: Use lowercase for identifiers (like table and column names) and data type (like varchar), use uppercase for SQL keywords (like SELECT, FROM, WHERE).
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <resultMap id="EmployeeResultMap" type="com.example.model.Employee">
+            <id property="id" column="EMPLOYEE_ID" />
+            <result property="firstName" column="FIRST_NAME" />
+            <result property="lastName" column="LAST_NAME" />
+            <result property="email" column="EMAIL" />
+        </resultMap>
+
+        <!-- After migration (PostgreSQL) -->
+        <resultMap id="EmployeeResultMap" type="com.example.model.Employee">
+            <id property="id" column="employee_id" />
+            <result property="firstName" column="first_name" />
+            <result property="lastName" column="last_name" />
+            <result property="email" column="email" />
+        </resultMap>
+        ```
+
+      ORM check item 2: Replace ROWNUM-based pagination with LIMIT/OFFSET in XML SQL queries.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <select id="findEmployeesWithPagination" resultMap="EmployeeResultMap">
+            SELECT * FROM (
+                SELECT e.*, ROWNUM as rn
+                FROM (
+                    SELECT * FROM EMPLOYEES
+                    ORDER BY HIRE_DATE DESC
+                ) e
+                WHERE ROWNUM &lt;= #{endRow}
+            )
+            WHERE rn > #{startRow}
+        </select>
+
+        <!-- After migration (PostgreSQL) -->
+        <select id="findEmployeesWithPagination" resultMap="EmployeeResultMap">
+            SELECT * FROM employees
+            ORDER BY hire_date DESC
+            LIMIT #{pageSize} OFFSET #{offset}
+        </select>
+        ```
+
+      ORM check item 3: Remove FROM DUAL in XML mapper queries.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <select id="getCurrentDate" resultType="java.util.Date">
+            SELECT SYSDATE FROM DUAL
+        </select>
+
+        <!-- After migration (PostgreSQL) -->
+        <select id="getCurrentDate" resultType="java.util.Date">
+            SELECT CURRENT_DATE
+        </select>
+        ```
+
+      ORM check item 4: Replace NVL function with COALESCE in XML SQL statements.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <select id="getTotalCompensation" resultType="java.math.BigDecimal">
+            SELECT SALARY + NVL(COMMISSION_PCT * SALARY, 0) AS total_comp
+            FROM EMPLOYEES
+            WHERE EMPLOYEE_ID = #{employeeId}
+        </select>
+
+        <!-- After migration (PostgreSQL) -->
+        <select id="getTotalCompensation" resultType="java.math.BigDecimal">
+            SELECT salary + COALESCE(commission_pct * salary, 0) AS total_comp
+            FROM employees
+            WHERE employee_id = #{employeeId}
+        </select>
+        ```
+
+      ORM check item 5: Replace CONNECT BY with WITH RECURSIVE CTEs in XML queries.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <select id="getEmployeeHierarchy" resultMap="EmployeeResultMap">
+            SELECT
+                EMPLOYEE_ID, FIRST_NAME, LAST_NAME,
+                LEVEL as hierarchy_level
+            FROM EMPLOYEES
+            START WITH EMPLOYEE_ID = #{rootEmployeeId}
+            CONNECT BY PRIOR EMPLOYEE_ID = MANAGER_ID
+            ORDER SIBLINGS BY LAST_NAME
+        </select>
+
+        <!-- After migration (PostgreSQL) -->
+        <select id="getEmployeeHierarchy" resultMap="EmployeeResultMap">
+            WITH RECURSIVE emp_hierarchy AS (
+                SELECT
+                    employee_id, first_name, last_name,
+                    1 as hierarchy_level
+                FROM employees
+                WHERE employee_id = #{rootEmployeeId}
+
+                UNION ALL
+
+                SELECT
+                    e.employee_id, e.first_name, e.last_name,
+                    eh.hierarchy_level + 1
+                FROM
+                    employees e
+                JOIN
+                    emp_hierarchy eh ON e.manager_id = eh.employee_id
+            )
+            SELECT
+                employee_id, first_name, last_name,
+                hierarchy_level
+            FROM emp_hierarchy
+            ORDER BY hierarchy_level, last_name
+        </select>
+        ```
+
+      ORM check item 6: Replace TO_CHAR date functions with EXTRACT in XML mapper queries.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <select id="findEmployeesHiredInQuarter" resultMap="EmployeeResultMap">
+            SELECT * FROM EMPLOYEES
+            WHERE TO_CHAR(HIRE_DATE, 'Q') = #{quarter}
+            AND TO_CHAR(HIRE_DATE, 'YYYY') = #{year}
+        </select>
+
+        <!-- After migration (PostgreSQL) -->
+        <select id="findEmployeesHiredInQuarter" resultMap="EmployeeResultMap">
+            SELECT * FROM employees
+            WHERE EXTRACT(QUARTER FROM hire_date) = CAST(#{quarter} AS INTEGER)
+            AND EXTRACT(YEAR FROM hire_date)::text = #{year}
+        </select>
+        ```
+
+      ORM check item 7: Use PostgreSQL's auto-generated keys instead of sequence.nextval in XML inserts.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <insert id="insertEmployee" parameterType="com.example.model.Employee">
+            <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
+                SELECT EMPLOYEES_SEQ.NEXTVAL FROM DUAL
+            </selectKey>
+            INSERT INTO EMPLOYEES (
+                EMPLOYEE_ID, FIRST_NAME, LAST_NAME, EMAIL
+            ) VALUES (
+                #{id}, #{firstName}, #{lastName}, #{email}
+            )
+        </insert>
+
+        <!-- After migration (PostgreSQL) -->
+        <insert id="insertEmployee" parameterType="com.example.model.Employee" useGeneratedKeys="true" keyProperty="id">
+            INSERT INTO employees (
+                first_name, last_name, email
+            ) VALUES (
+                #{firstName}, #{lastName}, #{email}
+            )
+        </insert>
+        ```
+
+      ORM check item 8: Replace {call} syntax with CALL statement for stored procedures.
+        ```xml
+        <!-- Before migration (Oracle) -->
+        <update id="updateItemPrice">
+            {call update_item_price(
+              #{itemId, mode=IN, jdbcType=NUMERIC},
+              #{percentIncrease, mode=IN, jdbcType=NUMERIC}
+            )}
+        </update>
+
+        <!-- After migration (PostgreSQL) -->
+        <update id="updateItemPrice">
+            CALL update_item_price(
+              #{itemId, mode=IN, jdbcType=NUMERIC},
+              #{percentIncrease, mode=IN, jdbcType=NUMERIC}
+            )
+        </update>
+        ```
+
+      ORM check item 9: In stored procedure calls, check the definition of the stored procedure, make sure that every parameter type is correct. Use "CAST" to convert type if necessary. Because PostgreSQL is more strict about parameter types in stored procedure calls.
+        Before migration (Oracle)
+        ```sql
+        CREATE TABLE EMPLOYEES (
+            EMPLOYEE_ID     NUMBER(6) PRIMARY KEY, -- Caution about the type here
+            SALARY          NUMBER(8,2)
+        );
+        CREATE OR REPLACE PROCEDURE update_employee_salary( -- This is the definition of the stored procedure
+            p_employee_id IN EMPLOYEES.EMPLOYEE_ID%TYPE, -- Caution about the type here
+            p_percent IN NUMBER
+        ) IS
+        BEGIN
+            UPDATE EMPLOYEES
+            SET SALARY = SALARY * (1 + p_percent/100)
+            WHERE EMPLOYEE_ID = p_employee_id;
+            COMMIT;
+        EXCEPTION
+            WHEN OTHERS THEN
+                ROLLBACK;
+                RAISE;
+        END update_employee_salary;
+        /
+        ```
+        ```xml
+        <update id="updateEmployeeSalary">
+          {call update_employee_salary(
+          #{employeeId, mode=IN, jdbcType=NUMERIC}, <!-- Caution about the type here -->
+          #{percentIncrease, mode=IN, jdbcType=NUMERIC}
+        )}
+        </update>
+        ```
+
+        After migration (PostgreSQL)
+        ```sql
+        CREATE TABLE employees (
+            employee_id     integer PRIMARY KEY, -- Caution about the type here
+            salary          numeric(8,2)
+        );
+        CREATE OR REPLACE PROCEDURE update_employee_salary( -- This is the definition of the stored procedure
+            p_employee_id integer, -- Caution about the type here
+            p_percent numeric
+        ) AS $$
+        BEGIN
+            UPDATE employees
+            SET salary = salary * (1 + p_percent/100)
+            WHERE employee_id = p_employee_id;
+        END;
+        $$ LANGUAGE plpgsql;
+        ```
+        ```xml
+        <update id="updateEmployeeSalary">
+          CALL update_employee_salary(
+          CAST(#{employeeId, mode=IN, jdbcType=NUMERIC} AS integer), <!-- Caution about the type cast here, it depends on the definition of the stored procedure -->
+          #{percentIncrease, mode=IN, jdbcType=NUMERIC}
+          )
+        </update>
+        ```
+
+      ORM check item 9999: Migrate all other Oracle-specific content to PostgreSQL. For each line, carefully verify whether it uses Oracle-only features.

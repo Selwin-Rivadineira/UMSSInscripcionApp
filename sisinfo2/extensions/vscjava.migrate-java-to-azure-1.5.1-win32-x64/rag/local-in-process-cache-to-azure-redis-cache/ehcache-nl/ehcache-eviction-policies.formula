@@ -1,0 +1,78 @@
+name: 'Migrate Ehcache eviction policies to Azure Cache for Redis'
+description: "Converts Ehcache memory store eviction policies to Azure Cache for Redis equivalents"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    memoryStoreEvictionPolicy|MemoryStoreEvictionPolicy.LRU|MemoryStoreEvictionPolicy.LFU|MemoryStoreEvictionPolicy.FIFO|maxElementsInMemory|maxBytesLocalHeap
+
+steps:
+  - description: "Migrate Ehcache eviction policies to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that configures Ehcache eviction policies to use Azure Cache for Redis equivalents. Follow these detailed instructions to make the transition:
+
+      ## Identifying Ehcache Eviction Policy Configurations
+      
+      Look for these Ehcache eviction policy patterns:
+      
+      1. MemoryStoreEvictionPolicy settings:
+         - MemoryStoreEvictionPolicy.LRU (Least Recently Used)
+         - MemoryStoreEvictionPolicy.LFU (Least Frequently Used)
+         - MemoryStoreEvictionPolicy.FIFO (First In First Out)
+      
+      2. Element limit configurations:
+         - maxElementsInMemory(count)
+         - maxBytesLocalHeap(size)
+      
+      3. Configuration combinations:
+         - Combined policy and size limits
+         - References to policy in XML configurations
+      
+      ## Fundamental Difference
+      
+      There's a crucial difference between Ehcache and Redis eviction approaches:
+      
+      - In Ehcache: Policies are configured in application code at the cache level
+      - In Redis: Eviction policies are server-side settings, configured at the Redis server level, not in application code
+      
+      ## Replacement Strategy
+      
+      1. Server-Side Configuration (Azure Portal):
+         - For previous Ehcache LRU: Configure 'volatile-lru' or 'allkeys-lru' in Azure Portal
+         - For previous Ehcache LFU: Configure 'volatile-lfu' or 'allkeys-lfu' in Azure Portal
+         - For previous Ehcache FIFO: Use 'volatile-ttl' as the closest alternative
+      
+      2. Application Code Adjustments:
+         - Replace maxElementsInMemory with appropriate Redis connection pool settings
+         - Configure TTL values as a more controlled alternative to relying on eviction
+         - Add comments explaining the Redis eviction policy in use
+      
+      3. Connection Pool Settings (if applicable):
+         - Configure appropriate JedisPoolConfig or LettucePoolingClientConfiguration
+         - Set reasonable max/min connections based on application needs
+      
+      ## Implementation Considerations
+      
+      - Azure Redis Cache eviction policy is configured in the Azure Portal under Advanced Settings
+      - Redis maxmemory-policy options:
+        * volatile-lru: Evict keys with TTL using LRU
+        * allkeys-lru: Evict any key using LRU
+        * volatile-lfu: Evict keys with TTL using LFU
+        * allkeys-lfu: Evict any key using LFU
+        * volatile-ttl: Evict keys with TTL, removing those closest to expiration first
+      - Application code should not attempt to set eviction policies
+      - Explicitly set TTL values for predictable behavior instead of relying on eviction
+      - Focus on provisioning adequate cache size in Azure to minimize evictions
+      - Document the Redis eviction policy chosen for application maintainers
+      
+      ## Implementation Notes
+      
+      1. Redis eviction policies are set at the server level, not in application code
+      2. For applications previously using Ehcache LRU, configure Redis with 'volatile-lru' or 'allkeys-lru'
+      3. For applications previously using Ehcache LFU, configure Redis with 'volatile-lfu' or 'allkeys-lfu'
+      4. For applications previously using Ehcache FIFO, use 'volatile-ttl' as the closest equivalent
+      5. Instead of maxElementsInMemory, focus on setting appropriate TTLs and connection pool limits
+      6. Add clear comments explaining the mapping from Ehcache to Redis eviction policies
+      7. For Azure Cache for Redis, include instructions on configuring the eviction policy in the Azure Portal
+      8. Consider adding proactive TTL settings as a more controlled alternative to relying on eviction

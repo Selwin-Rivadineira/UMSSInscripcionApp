@@ -1,0 +1,224 @@
+name: 'Migrate Ehcache event listeners to Azure Cache for Redis'
+description: "Converts Ehcache CacheEventListener implementations to Redis-compatible event handling mechanisms"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    CacheEventListener|extends CacheEventListener|implements CacheEventListener|CacheEntryEvent|EventType|CacheEntryCreateEvent|CacheEntryUpdatedEvent|CacheEntryRemovedEvent|CacheEntryExpiredEvent|registerCacheEventListener|@CacheEventListener
+
+steps:
+  - description: "Migrate Ehcache event listeners to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that uses Ehcache event listeners to use Redis-compatible event handling mechanisms instead.
+      Pay attention that you should only update the specific event listener code and keep the rest of the file - you cannot replace the whole file. What you return must be a valid, complete Java file.
+
+      Below are examples of Ehcache event listener implementations and their Azure Redis equivalents:
+
+      Ehcache event listener examples:
+      ```java
+      // Custom Ehcache CacheEventListener implementation
+      public class CustomCacheEventListener implements CacheEventListener {
+        @Override
+        public void notifyElementRemoved(Ehcache cache, Element element) {
+          System.out.println("Element removed: " + element.getObjectKey());
+        }
+        
+        @Override
+        public void notifyElementPut(Ehcache cache, Element element) {
+          System.out.println("Element added: " + element.getObjectKey());
+        }
+        
+        @Override
+        public void notifyElementUpdated(Ehcache cache, Element element) {
+          System.out.println("Element updated: " + element.getObjectKey());
+        }
+        
+        @Override
+        public void notifyElementExpired(Ehcache cache, Element element) {
+          System.out.println("Element expired: " + element.getObjectKey());
+        }
+        
+        @Override
+        public void notifyElementEvicted(Ehcache cache, Element element) {
+          System.out.println("Element evicted: " + element.getObjectKey());
+        }
+        
+        @Override
+        public void notifyRemoveAll(Ehcache cache) {
+          System.out.println("Cache cleared: " + cache.getName());
+        }
+        
+        @Override
+        public void dispose() {
+          // Cleanup resources
+        }
+        
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+          return super.clone();
+        }
+      }
+      
+      // Registering the listener with Ehcache
+      CacheEventListener listener = new CustomCacheEventListener();
+      cache.getCacheEventNotificationService().registerListener(listener);
+      
+      // Or using factory approach
+      CacheEventListenerFactory factory = new MyCacheEventListenerFactory();
+      cacheManager.addCacheEventListenerFactory(factory);
+      
+      // Ehcache 3.x event listener with annotations
+      @CacheEventListener
+      public class CacheLogger {
+        @EventType(EventType.CREATED)
+        public void onCreated(CacheEntryEvent<? extends String, ? extends String> event) {
+          System.out.println("Added key: " + event.getKey());
+        }
+        
+        @EventType(EventType.UPDATED)
+        public void onUpdated(CacheEntryEvent<? extends String, ? extends String> event) {
+          System.out.println("Updated key: " + event.getKey());
+        }
+        
+        @EventType(EventType.REMOVED)
+        public void onRemoved(CacheEntryEvent<? extends String, ? extends String> event) {
+          System.out.println("Removed key: " + event.getKey());
+        }
+        
+        @EventType(EventType.EXPIRED)
+        public void onExpired(CacheEntryEvent<? extends String, ? extends String> event) {
+          System.out.println("Expired key: " + event.getKey());
+        }
+      }
+      ```
+
+      Azure Cache for Redis event listener implementations using Redis keyspace notifications:
+
+      ```java
+      // With Spring Data Redis (recommended approach)
+      @Configuration
+      public class RedisEventListenerConfig {
+        
+        @Bean
+        public RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory connectionFactory) {
+          RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+          container.setConnectionFactory(connectionFactory);
+          return container;
+        }
+        
+        @Bean
+        public KeyspaceEventMessageListener keyspaceEventMessageListener(
+            RedisMessageListenerContainer listenerContainer) {
+          // This enables tracking of expired keys
+          KeyspaceEventMessageListener listener = new KeyspaceEventMessageListener(listenerContainer);
+          listener.setKeyspaceNotificationsConfigParameter("Ex"); // Listen for expired events
+          return listener;
+        }
+      }
+      
+      // Creating a custom Redis message listener
+      @Component
+      public class CustomRedisEventListener {
+        
+        @Autowired
+        private RedisMessageListenerContainer redisMessageListenerContainer;
+        
+        @PostConstruct
+        public void init() {
+          // Listen for key events on the "userCache:" prefix
+          String keyPattern = "__keyevent@*__:*";
+          String keyspacePattern = "__keyspace@*__:userCache:*";
+          
+          // Event listener for key removals (DEL operations)
+          redisMessageListenerContainer.addMessageListener(
+              (message, pattern) -> {
+                String key = new String(message.getBody(), StandardCharsets.UTF_8);
+                System.out.println("Key removed: " + key);
+              },
+              new PatternTopic("__keyevent@*__:del")
+          );
+          
+          // Event listener for key expirations
+          redisMessageListenerContainer.addMessageListener(
+              (message, pattern) -> {
+                String key = new String(message.getBody(), StandardCharsets.UTF_8);
+                System.out.println("Key expired: " + key);
+              },
+              new PatternTopic("__keyevent@*__:expired")
+          );
+          
+          // Listen for all operations on specific cache keys
+          redisMessageListenerContainer.addMessageListener(
+              (message, pattern) -> {
+                String channel = new String(message.getChannel(), StandardCharsets.UTF_8);
+                String operation = new String(message.getBody(), StandardCharsets.UTF_8);
+                String key = channel.substring(channel.lastIndexOf(":") + 1);
+                System.out.println("Operation " + operation + " performed on key: " + key);
+              },
+              new PatternTopic(keyspacePattern)
+          );
+        }
+      }
+      
+      // Using RedisTemplate directly to enable keyspace notifications and process events manually
+      @Bean
+      public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        
+        // Configure key and value serializers
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new JdkSerializationRedisSerializer());
+        
+        // Execute the CONFIG command to enable keyspace notifications when the bean is created
+        template.execute((RedisCallback<Object>) connection -> {
+          connection.serverCommands().configSet("notify-keyspace-events", "KEA");
+          return null;
+        });
+        
+        return template;
+      }
+      ```
+
+      Implementation notes:
+      1. Redis does not have a direct equivalent of Ehcache's CacheEventListener API
+      2. Instead, use Redis Keyspace Notifications to listen for cache operations
+      3. Redis requires explicit configuration of keyspace notifications via CONFIG command
+      4. Common notification settings:
+         - K = Keyspace events (events on key names, e.g., __keyspace@0__:key)
+         - E = Keyevent events (events published to event names, e.g., __keyevent@0__:del)
+         - A = All commands (not just set/expire/del)
+         - x = Expired events
+         - e = Evicted events
+         - $ = String operations
+         - g = Generic commands like DEL, EXPIRE, RENAME
+      5. Spring Data Redis provides MessageListenerContainer to simplify Redis pub/sub
+      6. When using Azure Cache for Redis:
+         - Keyspace notifications may increase CPU usage, use selectively
+         - Only enable the notification types you need (e.g., "Ex" for expiration events only)
+         - Some operations may not trigger events in exactly the same way as Ehcache
+      7. If detailed event handling is critical, consider implementing application-level events
+      8. For high-frequency cache operations, consider using a dedicated Redis instance for notifications
+
+      The following mapping can be used to convert Ehcache event types to Redis keyspace notifications:
+      - notifyElementPut → __keyevent@*__:set
+      - notifyElementUpdated → __keyevent@*__:set
+      - notifyElementRemoved → __keyevent@*__:del
+      - notifyElementExpired → __keyevent@*__:expired
+      - notifyElementEvicted → __keyevent@*__:evicted
+      - notifyRemoveAll → Not directly supported, track custom events or use Redis transactions
+
+      Note that you'll need to add the following to your application.properties or application.yml file:
+      ```properties
+      # Enable keyspace notifications for Redis
+      spring.redis.notify-keyspace-events=KEA
+      ```
+
+      Or in YAML:
+      ```yaml
+      spring:
+        redis:
+          notify-keyspace-events: KEA
+      ```

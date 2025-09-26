@@ -1,0 +1,86 @@
+name: 'Migrate Java build files from Oracle to PostgreSQL'
+description: 'Update Maven POM and Gradle build files for Oracle to PostgreSQL migration'
+
+codeLocation:
+  type: textsearch
+  filePattern: '**/{pom.xml,build.gradle,build.gradle.kts}'
+  codePattern: >-
+    oracle|Oracle|ojdbc
+
+steps:
+  - description: "Update dependencies for Oracle to PostgreSQL migration"
+    type: "instruction"
+    content: |
+
+      Your task is to migrate Maven POM or Gradle build files from Oracle database dependencies to PostgreSQL compatibility.
+
+      Follow these steps:
+      1. Review the checklist items below in sequence
+      2. Apply each relevant modification to the build file (POM or Gradle)
+      3. For each change you make, add a comment in the migrated code that includes the check item information. Example:
+        ```xml
+        <!-- Migrated from Oracle to PostgreSQL according to Build file check item 1: Replace Oracle JDBC driver with PostgreSQL driver dependency. -->
+        ```
+
+      # Check list
+
+      Build file check item 0: Don't modify the content if it's obviously not related to Oracle.
+
+      Build file check item 1: Replace Oracle JDBC driver (ojdbc) with PostgreSQL driver dependency.
+        Example 1:
+          Before migration (Oracle):
+            - groupId: com.oracle.database.jdbc
+              artifactId: ojdbc11
+          After migration (PostgreSQL):
+            - groupId: org.postgresql
+              artifactId: postgresql
+              version: 42.7.7
+        Example 2:
+          Before migration (Oracle):
+            - groupId: com.oracle.database.r2dbc
+              artifactId: oracle-r2dbc
+          After migration (PostgreSQL):
+            - groupId: io.r2dbc
+              artifactId: r2dbc-postgresql
+              version: 0.8.13.RELEASE
+
+      Build file check item 2: Replace flyway-database-oracle with flyway-database-postgresql.
+        Example:
+          Before migration (Oracle):
+            - groupId: org.flywaydb
+              artifactId: flyway-database-oracle
+          After migration (PostgreSQL):
+            - groupId: org.flywaydb
+              artifactId: flyway-database-postgresql
+
+      Build file check item 3: Replace oracle-xe testcontainer with postgresql testcontainer.
+        Example:
+          Before migration (Oracle):
+            - groupId: org.testcontainers
+              artifactId: oracle-xe
+          After migration (PostgreSQL):
+            - groupId: org.testcontainers
+              artifactId: postgresql
+
+      Build file check item 4: For newly added dependencies, avoid specifying explicit versions when a BOM (Bill of Materials) already manages a CVE-free version.
+        - Omit version numbers only when both of the following 2 conditions are met:
+          - The dependency version is managed by a parent POM or imported BOM
+          - (Must be satisfied) The managed version is secure (no known CVEs)
+        - Version can be managed by a parent POM. Example:
+          - groupId: org.springframework.boot
+            artifactId: spring-boot-starter-parent
+        - Version can be managed by imported BOM. Example:
+          - groupId: org.springframework.boot
+            artifactId: spring-boot-dependencies
+            scope: import
+            type: pom
+        - Omit version only when the managed version is CVE-free:
+          - groupId: org.flywaydb
+            artifactId: flyway-database-postgresql
+
+      Build file check item 5: Verify newly added dependencies are CVE-free.
+        - If you specify an explicit version that has known CVEs, update to a secure version without vulnerabilities.
+        - If the version is managed by a BOM (Bill of Materials) that contains CVEs, override with a secure version.
+        - Double-check for security issues before finalizing versions.
+
+      Build file check item 9999: Migrate all other Oracle-specific content to PostgreSQL. For each line, carefully verify whether it uses Oracle-only features.

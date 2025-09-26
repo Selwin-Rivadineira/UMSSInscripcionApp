@@ -1,0 +1,20 @@
+name: "Add properties for Managed Identity in Azure PostgreSQL (Public Cloud)"
+description: "Add Azure managed identity name in configuration."
+codeLocation:
+  type: "textsearch"
+  codePattern: ".*"
+  filePattern: "**/application{,-*}.{yml,yaml,properties}"
+steps:
+  - description: "Add properties for Managed Identity authentication"
+    type: "instruction"
+    content: |
+      Your task is to migrate a configuration file to use managed identity for authentication in Azure PostgreSQL instead of a password.
+      If the configuration file is yaml, please ensure the indentation and format is correct and consistent with the rest of the file.
+
+      1. Add the configuration for Azure managed identity name.
+        The name of Azure managed identity is used as user in database connection.
+
+      2. Remove the configuration for the password of the **PostgreSQL** database:
+        - Removing password segments from JDBC connection strings (typically after the & symbol)
+        - Removing the password property from the configuration file
+      Note: please do not remove the password property if it is used for other purposes.

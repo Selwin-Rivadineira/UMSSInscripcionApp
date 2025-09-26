@@ -1,0 +1,26 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "pom.xml",
+      "nested/pom.xml",
+      "nested/folder/pom.xml",
+      "build.gradle",
+      "project/build.gradle",
+      "multi-module/module1/build.gradle",
+      "build.gradle.kts",
+      "project/build.gradle.kts",
+      "multi-module/module1/build.gradle.kts"
+    ],
+    "shouldNotMatch": [
+      "build.text",
+      "nested/build.md"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      ""
+    ],
+    "shouldNotMatch": [
+    ]
+  }
+}

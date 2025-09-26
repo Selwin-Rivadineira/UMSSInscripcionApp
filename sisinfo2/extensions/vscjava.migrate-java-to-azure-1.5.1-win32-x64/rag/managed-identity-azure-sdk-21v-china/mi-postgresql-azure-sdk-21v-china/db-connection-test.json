@@ -1,0 +1,23 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "src/DBUtil.java",
+      "DatabaseBackupTool.java"
+    ],
+    "shouldNotMatch": [
+      "pom.xml",
+      "build.gradle",
+      "application.properties"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "return DriverManager.getConnection(url,username, password);",
+      "conexao = DriverManager.getConnection("
+    ],
+    "shouldNotMatch": [
+      "import com.azure.messaging.servicebus.ServiceBusReceivedMessage;",
+      "UnrelatedClass unrelated = new UnrelatedClass();"
+    ]
+  }
+}

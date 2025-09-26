@@ -1,0 +1,50 @@
+name: 'Migrate AWS Secrets Manager with Spring pom dependency to Spring Cloud Azure Key Vault'
+description: ""
+codeLocation:
+  type: textsearch
+  filePattern: '**/{pom.xml,build.gradle,build.gradle.kts}'
+  codePattern: >-
+    spring-cloud-starter-aws-secrets-manager-config|spring-cloud-aws-secrets-manager-config|spring-cloud-aws-starter-secrets-manager|spring-cloud-aws-secrets-manager
+
+steps:
+  - description: "Migrate AWS Secrets Manager with Spring dependency to Spring Cloud Azure Key Vault"
+    type: "instruction"
+    content: |
+      [INTERNAL NOTE: This step must only be executed when the migration strategy is Path 2 or 3 or 4. If it is not Path 2 or 3 or 4, do not output anything.]
+      Your task is to migrate a pom.xml, build.gradle, or build.gradle.kts file from using the AWS Secrets Manager with Spring to the Spring Cloud Azure Key Vault dependencies.
+
+      IMPORTANT: Only replace the AWS Secrets Manager dependencies. Do not modify or remove any other AWS service dependencies that may exist in the build file. The migration should be specific to Secrets Manager only.
+      Do not add 'spring-cloud-azure-dependencies' under the '<dependencies>' section. It should be declared under '<dependencyManagement>' as it is a BOM (Bill of Materials).
+
+      Below are the dependencies provided for your reference, don't forget to import the package whenever you are adding a new class reference in code edit:
+      AWS Secrets Manager related dependencies:
+      For SpringBoot 2:
+      - groupId: io.awspring.cloud
+        artifactId: spring-cloud-starter-aws-secrets-manager-config
+      - groupId: io.awspring.cloud
+        artifactId: spring-cloud-aws-secrets-manager-config
+
+      For SpringBoot 3:
+      - groupId: io.awspring.cloud
+        artifactId: spring-cloud-aws-starter-secrets-manager
+      - groupId: io.awspring.cloud
+        artifactId: spring-cloud-aws-secrets-manager
+
+      Spring Cloud Azure Key Vault related dependencies:
+      For SpringBoot 2:
+      - groupId: com.azure.spring
+        artifactId: spring-cloud-azure-dependencies
+        version: 4.20.0
+        type: pom
+        scope: import
+      - groupId: com.azure.spring
+        artifactId: spring-cloud-azure-starter-keyvault
+
+      For SpringBoot 3:
+      - groupId: com.azure.spring
+        artifactId: spring-cloud-azure-dependencies
+        version: 5.22.0
+        type: pom
+        scope: import
+      - groupId: com.azure.spring
+        artifactId: spring-cloud-azure-starter-keyvault

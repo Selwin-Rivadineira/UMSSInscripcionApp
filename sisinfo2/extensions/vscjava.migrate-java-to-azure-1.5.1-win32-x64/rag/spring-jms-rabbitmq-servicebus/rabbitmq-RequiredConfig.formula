@@ -1,0 +1,36 @@
+name: "Migrate Spring JMS RabbitMQ properties"
+description: "Migrate Spring JMS RabbitMQ properties to Spring Cloud Azure Service Bus JMS properties"
+
+codeLocation:
+  type: "textsearch"
+  codePattern: ".*"
+  filePattern: "**/*.{yml,yaml,properties}"
+
+steps:
+  - description: "Add Service Bus connection settings when the project explicitly uses com.rabbitmq.jms.admin.RMQConnectionFactory."
+    type: "instruction"
+    content: |
+      Your task is to add Service Bus JMS connection settings only when the application uses Spring JMS with RabbitMQ, to be more specificlly, when there are explicit calling of the class com.rabbitmq.jms.admin.RMQConnectionFactory.
+      Step 1. Search codebase to see whether the application uses `RMQConnectionFactory` or not.
+      Step 2. If the application uses RMQConnectionFactory, then add Service Bus connection settings if the application uses RMQConnectionFactory.
+      Step 3. If there is no explicit call of class RMQConnectionFactory, then this knowledge doesn't apply for this project and please directly end applying it.
+      *DO NOT* optimize the code blocks not directly related to the migration changes, *KEEP* those commented out code, minimize the amount of code changes.
+      *DO NOT* modify any existing properties even though they are related for RabbitMQ, AMQP or JMS.
+      *Do* create the configuration property file if the project doesn't have one and add below settings.
+
+      Service Bus connection settings:
+        - managed-identity-enabled
+          property: spring.cloud.azure.credential.managed-identity-enabled
+          value: true
+        - client-id
+          property: spring.cloud.azure.credential.client-id
+          value: ${AZURE_CLIENT_ID}
+        - pricing-tier
+          property: spring.jms.servicebus.pricing-tier
+          value: premium
+        - namespace
+          property: spring.jms.servicebus.namespace
+          value: ${SERVICE_BUS_NAMESPACE}
+        - passwordless-enabled
+          property: spring.jms.servicebus.passwordless-enabled
+          value: true

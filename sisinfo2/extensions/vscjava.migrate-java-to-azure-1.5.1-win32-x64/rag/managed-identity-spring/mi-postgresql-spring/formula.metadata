@@ -1,0 +1,4 @@
+group:
+  id: mi-postgresql-spring
+  displayName: PostgreSQL Managed Identity via Spring
+  description: PostgreSQL Managed Identity via Spring

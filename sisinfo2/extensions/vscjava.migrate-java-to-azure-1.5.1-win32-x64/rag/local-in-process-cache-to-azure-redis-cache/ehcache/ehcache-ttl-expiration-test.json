@@ -1,0 +1,29 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "CacheConfig.java",
+      "nested/CacheConfig.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "cacheConfig.timeToLiveSeconds(3600);",
+      "cacheConfig.timeToIdleSeconds(1800);",
+      "element.setTimeToLive(600);",
+      "element.setTimeToIdle(300);",
+      "element.setEternal(false);",
+      "eternal=true;",
+      "diskExpiryThreadIntervalSeconds;"
+    ],
+    "shouldNotMatch": [
+      "cacheConfig.setMaxEntriesLocalHeap(1000);",
+      "element.setDiskPersistent(true);",
+      "String unrelated = \"UnrelatedClass\";"
+    ]
+  }
+}

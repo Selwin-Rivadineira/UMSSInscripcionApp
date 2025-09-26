@@ -1,0 +1,24 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "ExampleClass.java",
+      "nested/ExampleClass.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "PutBucketPolicyRequest req = PutBucketPolicyRequest.builder().build();",
+      "DeleteBucketPolicyRequest req = DeleteBucketPolicyRequest.builder().build();",
+      "GetBucketPolicyRequest req = GetBucketPolicyRequest.builder().build();",
+      "AccessControlPolicy policy = new AccessControlPolicy();"
+    ],
+    "shouldNotMatch": [
+      "String unrelated = \"UnrelatedClass\";"
+    ]
+  }
+}

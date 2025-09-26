@@ -1,0 +1,33 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "application.yml",
+      "src/main/resources/application.properties",
+      "config/application.yaml",
+      "nested/folder/config.properties", 
+      "docker-compose.yml",
+      "deployment/environment.yaml"
+    ],
+    "shouldNotMatch": [
+      "application.json",
+      "config.xml",
+      "src/main/java/RabbitConfig.java",
+      "settings.js",
+      "README.md"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "server.port=8080",
+      "spring.jms.listener.auto-startup=true",
+      "# RabbitMQ connection settings",
+      "spring.rabbitmq.host=localhost",
+      "rabbitmq:\n  host: localhost\n  port: 5672",
+      "amqp.exchange.name=myExchange",
+      "jms.queue.name=myQueue",
+      "# This is a configuration file"
+    ],
+    "shouldNotMatch": [
+    ]
+  }
+}

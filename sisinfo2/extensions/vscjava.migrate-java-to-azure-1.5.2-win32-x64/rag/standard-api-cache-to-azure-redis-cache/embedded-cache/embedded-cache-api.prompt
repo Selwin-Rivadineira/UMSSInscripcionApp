@@ -1,0 +1,157 @@
+#codebase
+
+**Task Prompt: Embedded Cache (e.g., Ehcache/Caffeine) → Azure Cache for Redis Migration**
+
+### Context
+Your Java project currently uses Embedded Cache as a distributed cache
+Key Points:
+1. You need to migrate the entire project to use Azure Cache for Redis instead of Embedded Cache, focusing on code changes, dependency updates, and configuration adjustments.
+2. Please find suitable places to make the changes directly, like in-place modifying the pom.xml/build.gradle/application.yml file, write compilable code, don't leave uncompleted code blocks.
+3. You need to change the all the Embedded Cache cache related logic and keep other unchanged. At the same time, each place that uses Embedded Cache api, must be replaced with Azure cache for redis ones.
+4. Ignore data migration and infrastructure setup.
+5. You should delete or comment out the original implementation, since the depdendency will be removed. Or we cannot pass the build.
+
+---
+
+### **Key Differences & Migration Focus**
+Embedded caches (e.g., Ehcache) run locally within the application process, while Azure Redis is a managed remote service. Key adjustments include:
+1. **Dependency replacement** (remove embedded cache libraries, add Redis client).
+2. **Configuration overhaul** (remote connection, SSL, pooling).
+3. **Code adaptation** (replace local cache APIs with Redis operations).
+4. **Handling distributed caching challenges** (latency, serialization, failover).
+
+---
+
+### **Actionable Steps**
+
+#### **1. Dependency Updates**
+Remove embedded cache dependencies and add Redis client libraries:
+```diff
+<!-- Before: Embedded Cache (e.g., Ehcache) -->
+<dependency>
+    <groupId>org.ehcache</groupId>
+    <artifactId>ehcache</artifactId>
+</dependency>
+
+<!-- After: Azure Redis -->
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>5.2.0</version>
+</dependency>
+<!-- Optional: Spring Boot Redis Starter -->
+    <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>3.4.4</version>
+</dependency>
+```
+*Note: Ensure compatibility with Azure Redis versions (4.0 or 6.0) .*
+
+#### **2. Configuration Migration and connection setup**
+- Replace local cache settings with Azure Redis connection parameters:
+```yaml
+# Spring Boot Example
+spring:
+  redis:
+    host: your-cache.redis.cache.windows.net
+    port: 6380
+    password: your-access-key
+    ssl: true
+    timeout: 5000ms  # Azure recommends ≥5000ms
+    jedis:
+      pool:
+        max-active: 50  # Align with Azure connection limits
+```
+*Key points:*
+- Enable SSL for secure connections .
+- Adjust connection pooling to match Azure tier limits (e.g., Standard tier supports up to 20k connections) .
+
+- Configure Azure Redis Connection
+    Implement secure connection with Microsoft Entra ID authentication:
+    ```java
+    // Jedis library doesn't support passing in AzureCredentials, so fall back to access key solution
+    JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setMaxTotal(50); // Match WebSphere thread pool
+
+    JedisPool pool = new JedisPool(poolConfig,
+        "<your-cache>.redis.cache.windows.net",
+        6380,
+        2000,
+        "<your-access-key>",
+        true // SSL
+    );
+    ```
+- Optional: Spring Boot `application.yml` Configuration
+  If using Spring Boot, update Redis properties (keep strict the same properties), and please also consider using the following configs in the redis connection file above:
+  ```yaml
+  spring:
+    data:
+      redis:
+        host: <AZURE_REDIS_HOST>
+        port: 6380
+        username: <USERNAME>
+        password: <PASSWORD>
+				ssl:
+          enabled: true
+        lettuce:
+          pool:
+            max-active: 20  # Optimize for Azure Redis connection limits
+  ```
+
+#### **3. Code Migration Patterns**
+| Embedded Cache API (Ehcache) | Redis Equivalent |
+|------------------------------|------------------|
+| `cache.put(key, value)`       | `jedis.set(key, serializedValue)` |
+| `cache.get(key)`              | `jedis.get(key)` |
+| `cache.remove(key)`           | `jedis.del(key)` |
+| `cache.clear()`               | `jedis.flushDB()` |
+
+**Example Code Snippet:**
+```java
+// Before: Ehcache
+Cache<String, User> userCache = cacheManager.getCache("users", String.class, User.class);
+userCache.put("user123", user);
+
+// After: Redis (with JSON serialization)
+RedisTemplate<String, User> template = new RedisTemplate<>();
+template.setConnectionFactory(redisConnectionFactory);
+template.setValueSerializer(new Jackson2JsonRedisSerializer<>(User.class));
+ValueOperations<String, User> ops = template.opsForValue();
+ops.set("user:123", user);
+```
+
+#### **4. Advanced Feature Handling**
+- **Serialization**: Use `Jackson2JsonRedisSerializer` instead of Java native serialization for cross-platform compatibility .
+- **Transactions**: Replace `Ehcache XA transactions` with Redis `MULTI/EXEC` commands.
+- **Eviction Policies**: Configure Redis `maxmemory-policy` (e.g., `allkeys-lru`) instead of embedded cache TTL settings .
+- **Local Near-Caching**: For latency-sensitive apps, combine Redis with a local cache (e.g., Caffeine) using a layered strategy .
+
+#### **5. Verification & Testing**
+- **Validation**: Use `redis-cli` or Azure Portal metrics to confirm data persistence .
+- **Performance Testing**: Compare latency/throughput using tools like Azure Load Test (see 837/s → 2.14k/s improvement example) .
+- **Failover Testing**: Validate Redis high availability (Standard/Premium tiers support automatic failover) .
+
+---
+
+### **Redis Connection Deep Dive**
+For SSL/TLS connections, enforce TLS 1.2+ and disable deprecated protocols:
+```java
+JedisClientConfig config = DefaultJedisClientConfig.builder()
+    .ssl(true)
+    .sslSocketFactory(SSLContext.getDefault().getSocketFactory())
+    .build();
+JedisPool pool = new JedisPool("your-cache.redis.cache.windows.net", 6380, config);
+```
+*Note: Azure Redis enforces TLS 1.2+ by default .*
+
+### Pass the build
+Use this command to check whether the project can pass the build after migration. If not, fix any build error and make sure it pass the build.
+For windows:
+```
+cmd /c "mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8"
+```
+For Linux / macOS:
+```
+mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8
+```

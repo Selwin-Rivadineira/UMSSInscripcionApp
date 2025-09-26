@@ -1,0 +1,28 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "CacheOperations.java",
+      "nested/CacheOperations.java",
+      "Main.java"
+    ],
+    "shouldNotMatch": [
+      "AnotherClass.kt",
+      "nested/ExampleClass.txt"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "cache.get(\"user:123\");",
+      "cache.put(\"user:123\", user);",
+      "cache.remove(\"user:123\");",
+      "Element element = new Element(\"user:123\", user);",
+      "ehcache.get(\"user:123\");",
+      "ehcache.put(\"user:123\", user);",
+      "ehcache.remove(\"user:123\");"
+    ],
+    "shouldNotMatch": [
+      "cache.unrelatedMethod(\"user:123\");",
+      "String unrelated = \"UnrelatedClass\";"
+    ]
+  }
+}

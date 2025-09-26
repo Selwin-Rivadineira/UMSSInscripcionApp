@@ -1,0 +1,33 @@
+{
+  "filePattern": {
+    "shouldMatch": [
+      "pom.xml",
+      "module/pom.xml",
+      "build.gradle",
+      "module/build.gradle",
+      "build.gradle.kts",
+      "module/build.gradle.kts"
+    ],
+    "shouldNotMatch": [
+      "pom.txt",
+      "pom.json",
+      "config/properties.yaml",
+      "src/main/resources/App.java"
+    ]
+  },
+  "codePattern": {
+    "shouldMatch": [
+      "spring-security-ldap",
+      "spring-ldap-core",
+      "spring-boot-starter-data-ldap",
+      "org.springframework.boot:spring-boot-starter-security"
+    ],
+    "shouldNotMatch": [
+      "com.azure.spring:spring-cloud-azure-starter-invalid",
+      "com.azure.spring:spring-cloud-azure-starter-active-directory",
+      "com.azure.spring:spring-cloud-azure-starter-unknown",
+      "org.springframework.boot:spring-boot-starter-invalid",
+      "org.springframework.boot:spring-boot-starter-oauth2-client"
+    ]
+  }
+}

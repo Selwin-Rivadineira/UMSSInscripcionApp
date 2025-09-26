@@ -1,0 +1,79 @@
+name: 'Migrate Ehcache Spring Cache annotations to Azure Cache for Redis'
+description: "Adapts Spring Cache annotations (@Cacheable, @CacheEvict, etc.) to work with Redis"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    @Cacheable|@CachePut|@CacheEvict|@CacheConfig|@Caching
+
+steps:
+  - description: "Migrate Ehcache Spring Cache annotations to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to examine Java code with Spring Cache annotations that were previously used with Ehcache and ensure they are properly configured to work with Azure Cache for Redis. Follow these detailed instructions to make the transition:
+
+      ## Identifying Spring Cache Annotations
+      
+      Look for these Spring Cache annotations in your code:
+      
+      1. Method-level cache annotations:
+         - @Cacheable
+         - @CachePut
+         - @CacheEvict
+         - @Caching (combined annotations)
+      
+      2. Class-level annotations:
+         - @CacheConfig
+      
+      3. Annotation attributes to review:
+         - cache names/values
+         - key expressions
+         - condition expressions
+         - custom key generators
+         - cacheManager references
+      
+      ## Compatibility Assessment
+      
+      Most Spring Cache annotations will work with Redis without changes, but you should review:
+      
+      1. Key generators: May need adjustment for Redis compatibility
+      2. Condition expressions: Check for Ehcache-specific conditions
+      3. TTL expressions: Not directly portable from Ehcache to Redis
+      4. Cache resolver references: Update if custom resolvers were used
+      
+      ## Necessary Changes
+      
+      Make the following adjustments as needed:
+      
+      1. For custom key generators:
+         - Update to ensure keys are Redis-compatible
+         - Ensure proper string conversion and avoid problematic characters
+      
+      2. For cacheManager references:
+         - Change from "ehCacheCacheManager" to "redisCacheManager"
+      
+      3. For TTL settings:
+         - Move from annotation-level to RedisCacheManager configuration
+         - Redis TTL is configured per cache, not per entry in annotations
+      
+      4. For conditions with Ehcache-specific logic:
+         - Refactor to use Redis-compatible conditions
+      
+      ## Implementation Considerations
+      
+      - Spring Cache abstraction remains valid with Redis; the annotations themselves are cache-implementation agnostic
+      - Custom key generators must be updated if they depend on Ehcache-specific behavior
+      - Redis keys are strings, so ensure proper conversion in key generators
+      - Cache names should match those configured in the RedisCacheManager
+      - For classes using multiple caches, ensure all referenced caches are configured
+      - Serialization is critical - ensure objects are properly serializable
+      
+      Implementation notes:
+      1. In most cases, Spring Cache annotations can remain unchanged
+      2. Update any cacheManager attributes to reference the Redis cache manager
+      3. Review and adjust any custom key generators to ensure they produce Redis-compatible keys
+      4. Remove any Ehcache-specific conditions or expressions
+      5. If using custom cache resolvers, update them to work with Redis
+      6. Check that serialization is properly configured for objects stored in Redis
+      7. For classes that use multiple caches, ensure all referenced caches are configured in Redis
+      8. Confirm that cache names used in annotations match those defined in your Redis cache configuration

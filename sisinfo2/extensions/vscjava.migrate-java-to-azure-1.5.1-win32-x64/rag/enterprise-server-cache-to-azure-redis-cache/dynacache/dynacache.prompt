@@ -1,0 +1,123 @@
+#codebase
+
+Here's the refined migration prompt focusing on Dynacache → Azure Cache for Redis, incorporating Redis connection initialization and key technical aspects:
+
+---
+
+### Context
+Your Java project currently uses Dynacache as a distributed cache
+Key Points:
+1. You need to migrate the entire project to use Azure Cache for Redis instead of Dynacache, focusing on code changes, dependency updates, and configuration adjustments.
+2. Please find suitable places to make the changes directly, like in-place modifying the pom.xml/build.gradle/application.yml file, write compilable code, don't leave uncompleted code blocks.
+3. You need to change the all the Dynacache cache related logic and keep other unchanged. At the same time, each place that uses Dynacache API, must be replaced with Azure cache for redis ones.
+4. Ignore data migration and infrastructure setup.
+5. You should delete or comment out the original implementation, since the depdendency will be removed. Or we cannot pass the build.
+
+### Key Migration Steps
+
+**1. Connection Initialization & Dependency Replacement**
+- Remove Dynacache dependencies (`com.ibm.websphere.cache`, `dynacache-api`)
+- Add Redis client (Jedis/Lettuce) and Azure Identity SDK:
+```xml
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>5.2.0</version>
+</dependency>
+<!-- Optional: Spring Boot Redis Starter -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>3.4.4</version>
+</dependency>
+```
+
+**2. Configure Azure Redis Connection**
+- Implement secure connection with Microsoft Entra ID authentication:
+    ```java
+    // Jedis library doesn't support passing in AzureCredentials, so fall back to access key solution
+    JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setMaxTotal(50); // Match WebSphere thread pool
+
+    JedisPool pool = new JedisPool(poolConfig,
+        "<your-cache>.redis.cache.windows.net",
+        6380,
+        2000,
+        "<your-access-key>",
+        true // SSL
+    );
+    ```
+
+- Optional: Spring Boot `application.yml` Configuration
+  If using Spring Boot, update Redis properties (keep strict the same properties), and please also consider using the following configs in the redis connection file above:
+  ```yaml
+  spring:
+    data:
+      redis:
+        host: <AZURE_REDIS_HOST>
+        port: 6380
+        username: <USERNAME>
+        password: <PASSWORD>
+				ssl:
+          enabled: true
+        lettuce:
+          pool:
+            max-active: 20  # Optimize for Azure Redis connection limits
+  ```
+
+**3. API Pattern Conversion**
+Convert Dynacache patterns to Redis data structures:
+
+| Dynacache Pattern | Redis Equivalent | Example |
+|--------------------|------------------|---------|
+| `Cache.getInstance()` | JedisPool resource acquisition | `try (Jedis jedis = pool.getResource()) { ... }`  |
+| `distributedMap.put()` | Hash operations | `jedis.hset("userSession:123", "cartItems", serializedData)`  |
+| Cache eviction policies | Redis TTL + eviction config | `jedis.expire("product:456", 3600)` + `maxmemory-policy volatile-ttl`  |
+| Cache listeners | Redis Keyspace Notifications | `config set notify-keyspace-events KEA`  |
+
+**4. Session Management Migration**
+Replace Dynacache session replication with Redis session store:
+```java
+// Original Dynacache session handling
+DistributedMap sessionMap = CacheManager.getDistributedMap("sessions");
+sessionMap.put(sessionId, userData);
+
+// Azure Redis equivalent with JSON serialization
+try (Jedis jedis = pool.getResource()) {
+    jedis.setex("session:" + sessionId, 1800, serializeToJson(userData));
+}
+```
+
+**5. Configuration Changes**
+| Dynacache Parameter | Azure Redis Equivalent |
+|----------------------|------------------------|
+| `cache-size` | `maxmemory` + `maxmemory-policy`  |
+| `share-distributed-map` | Azure Redis clustering |
+| `time-to-live` | `EXPIRE`/`EXPIREAT` commands |
+| JVM replication | Geo-redundant replication (Premium tier)  |
+
+**6. Exception Handling Update**
+```java
+// Before
+catch (CacheException e) { /* Dynacache error handling */ }
+
+// After
+catch (JedisConnectionException | RedisTimeoutException e) {
+    // Implement retry logic with backoff
+    if(e instanceof JedisConnectionException) {
+        pool.returnBrokenResource(jedis);
+    }
+}
+```
+
+### Pass the build
+Use this command to check whether the project can pass the build after migration. If not, fix any build error and make sure it pass the build.
+For windows:
+```
+cmd /c "mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8"
+```
+For Linux / macOS:
+```
+mvn clean compile -B -fn -DskipTests -Dossindex.failOnError=false -Dossindex.skip=true -Dlicense.skip=true -Dcheckstyle.skip=true -Dencoding=UTF-8
+```
+

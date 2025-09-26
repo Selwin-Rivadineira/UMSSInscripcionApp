@@ -1,0 +1,4 @@
+group:
+  id: AWS-secrets-manager
+  displayName: AWS Secrets Manager to Azure Key Vault
+  description: AWS Secrets Manager to Azure Key Vault

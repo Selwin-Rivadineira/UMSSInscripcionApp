@@ -1,0 +1,12 @@
+group:
+  id: amqp-rabbitmq-servicebus
+  displayName: RabbitMQ to Azure Service Bus via AMQP
+  description: RabbitMQ to Azure Service Bus via Spring AMQP and Spring Messaging
+tags:
+  - RabbitMQ
+  - Azure Service Bus
+  - Message Broker
+  - Message Queue
+  - Messaging
+  - AMQP
+  - Spring

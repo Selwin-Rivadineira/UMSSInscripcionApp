@@ -1,0 +1,111 @@
+name: 'Migrate Ehcache eviction policies to Azure Cache for Redis'
+description: "Converts Ehcache memory store eviction policies to Azure Cache for Redis equivalents"
+codeLocation:
+  type: textsearch
+  filePattern: '**/*.java'
+  codePattern: >-
+    memoryStoreEvictionPolicy|MemoryStoreEvictionPolicy.LRU|MemoryStoreEvictionPolicy.LFU|MemoryStoreEvictionPolicy.FIFO|maxElementsInMemory|maxBytesLocalHeap
+
+steps:
+  - description: "Migrate Ehcache eviction policies to Azure Cache for Redis"
+    type: "instruction"
+    content: |
+      Your task is to migrate Java code that configures Ehcache eviction policies to use Azure Cache for Redis equivalents.
+      Pay attention that you should only update the specific eviction policy code and keep the rest of the file - you cannot replace the whole file. What you return must be a valid, complete Java file.
+
+      Below are examples of Ehcache eviction policy configurations and their Azure Redis equivalents:
+
+      Ehcache eviction policy examples:
+      ```java
+      // Programmatic configuration with LRU eviction policy
+      CacheConfiguration cacheConfig = new CacheConfiguration("userCache", 1000)
+          .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+      
+      // Programmatic configuration with LFU eviction policy
+      CacheConfiguration cacheConfig = new CacheConfiguration("productCache", 5000)
+          .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LFU);
+      
+      // Programmatic configuration with FIFO eviction policy
+      CacheConfiguration cacheConfig = new CacheConfiguration("orderCache", 2000)
+          .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.FIFO);
+      
+      // Setting max elements in memory
+      CacheConfiguration cacheConfig = new CacheConfiguration("userCache", 10000);
+      
+      // Setting max bytes for local heap
+      CacheConfiguration cacheConfig = new CacheConfiguration("userCache", 0)
+          .maxBytesLocalHeap(100, MemoryUnit.MEGABYTES);
+      ```
+
+      Handling Redis eviction policies:
+      
+      In Redis, eviction policies are configured at the server level, not at the individual cache level like in Ehcache. The Redis eviction policy is set using the `maxmemory-policy` configuration.
+      
+      For a Spring Boot application, you typically don't set the eviction policy in your application code, as it's a server-side setting. In Azure Cache for Redis, this is configured through the Azure Portal or Azure CLI.
+      
+      However, your application can be adapted to work with the configured Redis eviction policy:
+
+      ```java
+      // For client-side memory constraints, configure the Redis connection pool
+      // This is somewhat analogous to Ehcache's maxElementsInMemory
+      @Bean
+      public JedisPoolConfig jedisPoolConfig() {
+          JedisPoolConfig poolConfig = new JedisPoolConfig();
+          // Set a reasonable max active/idle connections based on your application's needs
+          poolConfig.setMaxTotal(100);  // Similar to limiting the number of cache entries
+          poolConfig.setMaxIdle(20);
+          poolConfig.setMinIdle(5);
+          return poolConfig;
+      }
+      
+      // When using Spring's RedisCacheManager, configure individual cache limits
+      @Bean
+      public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+          // For all caches, set reasonable TTL (instead of relying on eviction)
+          RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+              .entryTtl(Duration.ofHours(1));
+          
+          // Configure individual caches with appropriate TTLs
+          Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+          
+          // High-priority cache that should remain longer (like LFU would prioritize)
+          cacheConfigs.put("productCache", RedisCacheConfiguration.defaultCacheConfig()
+              .entryTtl(Duration.ofHours(4)));
+          
+          // Lower-priority cache with shorter TTL (like LRU would evict)
+          cacheConfigs.put("temporaryCache", RedisCacheConfiguration.defaultCacheConfig()
+              .entryTtl(Duration.ofMinutes(30)));
+          
+          return RedisCacheManager.builder(connectionFactory)
+              .cacheDefaults(defaultConfig)
+              .withInitialCacheConfigurations(cacheConfigs)
+              .build();
+      }
+      ```
+
+      Information about Redis eviction policies to include in comments:
+      ```java
+      /*
+       * Redis Eviction Policy Info (configured on the Redis server, not in application code):
+       * 
+       * Mappings from Ehcache to Redis policies:
+       * - Ehcache LRU → Redis 'volatile-lru' or 'allkeys-lru'
+       * - Ehcache LFU → Redis 'volatile-lfu' or 'allkeys-lfu'
+       * - Ehcache FIFO → No direct equivalent, closest is 'volatile-ttl'
+       * 
+       * When using Azure Cache for Redis, set the policy in the Azure Portal:
+       * 1. Go to your Redis cache instance
+       * 2. Click on 'Advanced settings'
+       * 3. Under 'Memory policies', configure 'maxmemory-policy'
+       */
+      ```
+
+      Implementation notes:
+      1. Redis eviction policies are set at the server level, not in application code
+      2. For applications previously using Ehcache LRU, configure Redis with 'volatile-lru' or 'allkeys-lru'
+      3. For applications previously using Ehcache LFU, configure Redis with 'volatile-lfu' or 'allkeys-lfu'
+      4. For applications previously using Ehcache FIFO, use 'volatile-ttl' as the closest equivalent
+      5. Instead of maxElementsInMemory, focus on setting appropriate TTLs and connection pool limits
+      6. Add clear comments explaining the mapping from Ehcache to Redis eviction policies
+      7. For Azure Cache for Redis, include instructions on configuring the eviction policy in the Azure Portal
+      8. Consider adding proactive TTL settings as a more controlled alternative to relying on eviction
