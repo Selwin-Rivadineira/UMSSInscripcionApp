@@ -315,6 +315,13 @@ panelInscripcionCurso.add(cmbCursos, gbcCurso);
             JOptionPane.showMessageDialog(this, "Error al registrar: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    private void limpiarCamposInscripcionCurso() {
+    txtNombrePostulante.setText("");
+    txtApellidoPostulante.setText("");
+    txtCIPostulante.setText("");
+    cmbCursos.setSelectedIndex(0); // Selecciona el primer elemento (vacío)
+    selectedCursoId = -1; // Reinicia el ID seleccionado
+    }
 
     private void inscribirCurso() {
          String nombre = txtNombrePostulante.getText().trim();
@@ -351,6 +358,7 @@ panelInscripcionCurso.add(cmbCursos, gbcCurso);
             stmtInscribir.executeUpdate();
 
             JOptionPane.showMessageDialog(this, "Inscripción al curso \"" + cmbCursos.getSelectedItem() + "\" exitosa.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            limpiarCamposInscripcionCurso();
         } else {
             JOptionPane.showMessageDialog(this, "No se encontró un postulante con esos datos.", "Error", JOptionPane.ERROR_MESSAGE);
         }
