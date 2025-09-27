@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import ConexionBD.Conexion;
+import javax.swing.*;
 public class InicioSecion extends javax.swing.JFrame {
     public InicioSecion() {
         initComponents();
@@ -175,28 +176,38 @@ public class InicioSecion extends javax.swing.JFrame {
     }                                            
 
     private void jBotonIniciarActionPerformed(java.awt.event.ActionEvent evt) {                                              
-        String correo = jTextFieldCorreo.getText().trim();
-        String telefono = new String(JtexFieldTelefono.getPassword()).trim();
-        String ci = new String(JtextFieldCI.getPassword()).trim();
-        String captchaGenerado = jTextFieldGenerar.getText().trim();   
-        String captchaIngresado = JtextFieldCapcha.getText().trim();   
+       String correo = jTextFieldCorreo.getText().trim();
+       String telefono = new String(JtexFieldTelefono.getPassword()).trim();
+       String ci = new String(JtextFieldCI.getPassword()).trim();
+       String captchaGenerado = jTextFieldGenerar.getText().trim();   
+       String captchaIngresado = JtextFieldCapcha.getText().trim();   
 
         if(correo.isEmpty() || telefono.isEmpty() || ci.isEmpty() || captchaIngresado.isEmpty()){
             JOptionPane.showMessageDialog(this, "Debe llenar todos los campos, incluido el código de verificación", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        if (!captchaGenerado.equalsIgnoreCase(captchaIngresado)) {
+       if (!captchaGenerado.equalsIgnoreCase(captchaIngresado)) {
             JOptionPane.showMessageDialog(this, "El código de verificación no coincide", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
+   
+        CaptchaDialog dialog = new CaptchaDialog(this, true); 
+        dialog.setLocationRelativeTo(this); 
+        dialog.setVisible(true); 
+
+        if (!dialog.isCaptchaCorrecto()) {
+            JOptionPane.showMessageDialog(this, "Debe marcar la casilla 'No soy un robot'.", "Error", JOptionPane.ERROR_MESSAGE);
+           return;
+        }
+
         Connection con = null;
-        PreparedStatement pst = null;
+       PreparedStatement pst = null;
         ResultSet rs = null;
-        
+    
         try {
-           con = ConexionBD.Conexion.getConnection();
+            con = ConexionBD.Conexion.getConnection();
 
             String sql = "SELECT * FROM Postulante WHERE correo = ? AND telefono = ? AND ci = ?";
             pst = con.prepareStatement(sql);
@@ -209,7 +220,7 @@ public class InicioSecion extends javax.swing.JFrame {
             if(rs.next()){
                 JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
             } else {
-                JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
+               JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (SQLException e) {
@@ -219,9 +230,8 @@ public class InicioSecion extends javax.swing.JFrame {
                 if(rs != null) rs.close();
                 if(pst != null) pst.close();
                 if(con != null) con.close();
-            } catch (SQLException e) {
-            }
-       }
+            } catch (SQLException e) {}
+        }
     }                                             
 
     private void jTextFieldGenerarActionPerformed(java.awt.event.ActionEvent evt) {                                                  
