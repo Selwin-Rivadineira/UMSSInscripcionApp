@@ -1,7 +1,5 @@
 import javax.swing.*;
-
 import conexion.conexion;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -82,5 +80,8 @@ public class SeleccionFacultad extends JFrame {
         }
         return facultadesList;
     }
-
+    public static void main(String[] args){
+        SeleccionFacultad sele = new SeleccionFacultad();
+        sele.setVisible(true);
+    }
 }

@@ -4,15 +4,15 @@ import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-
+import java.util.Random;
 import conexion.conexion;
 
 public class infoPreUniversitarios extends JFrame {
     Connection conn;
     static String[] base = new String[10];
-
-    public infoPreUniversitarios() {
-        super("Sistema Académico");
+    int Ndatos;
+   public infoPreUniversitarios() {
+        super("Informacion de PreUniversitarios");
         setSize(550, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -21,6 +21,8 @@ public class infoPreUniversitarios extends JFrame {
     }
 
     private void crearGUI() {
+        existencia();
+        Random rand = new Random();
         infoPreUniversitarios.this.add(AbrirLinksJFrame.crearPieDePagina(infoPreUniversitarios.this),BorderLayout.SOUTH);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
@@ -47,38 +49,31 @@ public class infoPreUniversitarios extends JFrame {
         ));
         facultyLabel.setBackground(new Color(240, 248, 255));
         facultyLabel.setOpaque(true);
-
-        JPanel accordion1 = createAccordionSection(
-                "Pre universitarios a inicio de año",
-                "fecha limite de inscripcion = " + base[0] + "<br>" +
-                "fecha de inicio de las clases = " + base[1] + "<br>" +
-                "fecha final de las clases = " + base[2] + "<br>" +
-                base[3] + "<br>" +
-                "coste = " + base[4] + "<br>",
-                new Color(52, 152, 219),
-                false 
-        );
-
-        JPanel accordion2 = createAccordionSection(
-                "Pre universitarios a finales de año",
-                "fecha limite de inscripcion = " + base[5] + "<br>" +
-                "fecha de inicio de las clases = " + base[6] + "<br>" +
-                "fecha final de las clases = " + base[7] + "<br>" +
-                base[8] + "<br>" +
-                "coste = " + base[9] + "<br>",
-                new Color(46, 204, 113),
-                false 
-        );
+        JPanel acordion[] = new JPanel[Ndatos];
+        int aux=0;
+        for(int i=0;i<Ndatos;i++){
+            acordion[i] = createAccordionSection( "Pre universitarios ",
+                "fecha limite de inscripcion = " + base[aux] + "<br>" +
+                "fecha de inicio de las clases = " + base[aux+1] + "<br>" +
+                "fecha final de las clases = " + base[aux+2] + "<br>" +
+                base[aux+3] + "<br>" +
+                "coste = " + base[aux+4] + "<br>",
+                new Color(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256)),
+                false );
+                aux = aux +5;
+        }
 
         mainPanel.add(titleLabel);
         mainPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         mainPanel.add(subtitleLabel);
         mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         mainPanel.add(facultyLabel);
+
+        for(int i=0 ; i<Ndatos ;i++){
         mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        mainPanel.add(accordion1);
-        mainPanel.add(Box.createRigidArea(new Dimension(0, 15)));
-        mainPanel.add(accordion2);
+        mainPanel.add(acordion[i]);
+    }
+        
 
         JButton btnAtras = new JButton("Atras");
         btnAtras.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -141,7 +136,7 @@ public class infoPreUniversitarios extends JFrame {
         textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         contentText.setPreferredSize(new Dimension(Integer.MAX_VALUE, 120));
-
+        
         contentPanel.add(textScrollPane, BorderLayout.CENTER);
 
         button.addActionListener(e -> {
@@ -180,16 +175,27 @@ public class infoPreUniversitarios extends JFrame {
             e.printStackTrace();
         }
     }
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
+
+    public void existencia() {
+    try {
+        conn = conexion.getconexion();
+        String sql = "SELECT COUNT(*) AS Ndatos FROM CursoPreuniversitario c " +
+                     "INNER JOIN facultades f " +
+                     "ON f.id_facultad = c.id_facultad " +
+                     "WHERE f.facultad = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, datos.getFacultad());
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) { 
+            Ndatos = rs.getInt("Ndatos");
         }
 
-        SwingUtilities.invokeLater(() -> {
-            infoPreUniversitarios ventana = new infoPreUniversitarios();
-            ventana.setVisible(true);
-        });
+        rs.close();
+        ps.close();
+        conn.close();
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+}
 }
