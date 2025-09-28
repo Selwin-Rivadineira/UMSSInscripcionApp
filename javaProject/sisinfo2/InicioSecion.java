@@ -182,57 +182,75 @@ public class InicioSecion extends javax.swing.JFrame {
        String captchaGenerado = jTextFieldGenerar.getText().trim();   
        String captchaIngresado = JtextFieldCapcha.getText().trim();   
 
-        if(correo.isEmpty() || telefono.isEmpty() || ci.isEmpty() || captchaIngresado.isEmpty()){
-            JOptionPane.showMessageDialog(this, "Debe llenar todos los campos, incluido el código de verificación", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+      if(correo.isEmpty() || telefono.isEmpty() || ci.isEmpty() || captchaIngresado.isEmpty()){
+          JOptionPane.showMessageDialog(this, "Debe llenar todos los campos, incluido el código de verificación", "Error", JOptionPane.ERROR_MESSAGE);
+          return;
+      }
 
-       if (!captchaGenerado.equalsIgnoreCase(captchaIngresado)) {
-            JOptionPane.showMessageDialog(this, "El código de verificación no coincide", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+      if (!captchaGenerado.equalsIgnoreCase(captchaIngresado)) {
+          JOptionPane.showMessageDialog(this, "El código de verificación no coincide", "Error", JOptionPane.ERROR_MESSAGE);
+          return;
+      }
 
-   
-        CaptchaDialog dialog = new CaptchaDialog(this, true); 
-        dialog.setLocationRelativeTo(this); 
-        dialog.setVisible(true); 
+      CaptchaDialog dialog = new CaptchaDialog(this, true); 
+      dialog.setLocationRelativeTo(this); 
+      dialog.setVisible(true); 
 
-        if (!dialog.isCaptchaCorrecto()) {
-            JOptionPane.showMessageDialog(this, "Debe marcar la casilla 'No soy un robot'.", "Error", JOptionPane.ERROR_MESSAGE);
-           return;
-        }
+      if (!dialog.isCaptchaCorrecto()) {
+          JOptionPane.showMessageDialog(this, "Debe marcar la casilla 'No soy un robot'.", "Error", JOptionPane.ERROR_MESSAGE);
+          return;
+      }
 
-        Connection con = null;
+       Connection con = null;
        PreparedStatement pst = null;
-        ResultSet rs = null;
-    
-        try {
-            con = ConexionBD.Conexion.getConnection();
+       ResultSet rs = null;
 
-            String sql = "SELECT * FROM Postulante WHERE correo = ? AND telefono = ? AND ci = ?";
-            pst = con.prepareStatement(sql);
-            pst.setString(1, correo);
-            pst.setString(2, telefono);
-            pst.setString(3, ci);
+      try {
+          con = ConexionBD.Conexion.getConnection();
 
-            rs = pst.executeQuery();
+          String sqlCheckTelefono = "SELECT COUNT(*) AS total FROM Postulante WHERE telefono = ?";
+          pst = con.prepareStatement(sqlCheckTelefono);
+          pst.setString(1, telefono);
+          rs = pst.executeQuery();
 
-            if(rs.next()){
-                JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
-            } else {
-               JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+          boolean telefonoDuplicado = false;
+          if (rs.next()) {
+              telefonoDuplicado = rs.getInt("total") > 1; // si hay más de uno, es duplicado
+          }
+          rs.close();
+         pst.close();
 
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error de conexión: " + e.getMessage());
-        } finally {
-            try {
-                if(rs != null) rs.close();
-                if(pst != null) pst.close();
-                if(con != null) con.close();
-            } catch (SQLException e) {}
-        }
-    }                                             
+          String sql;
+          if (telefonoDuplicado) {
+              sql = "SELECT * FROM Postulante WHERE correo = ? AND ci = ?";
+              pst = con.prepareStatement(sql);
+              pst.setString(1, correo);
+              pst.setString(2, ci);
+          } else {
+              sql = "SELECT * FROM Postulante WHERE correo = ? AND telefono = ? AND ci = ?";
+              pst = con.prepareStatement(sql);
+              pst.setString(1, correo);
+              pst.setString(2, telefono);
+              pst.setString(3, ci);
+          }
+
+          rs = pst.executeQuery();
+          if (rs.next()) {
+              JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
+          } else {
+              JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
+          }
+
+      } catch (SQLException e) {
+          JOptionPane.showMessageDialog(this, "Error de conexión: " + e.getMessage());
+      } finally {
+          try {
+              if(rs != null) rs.close();
+              if(pst != null) pst.close();
+              if(con != null) con.close();
+          } catch (SQLException e) {}
+      }
+    }                                                               
 
     private void jTextFieldGenerarActionPerformed(java.awt.event.ActionEvent evt) {                                                  
 
