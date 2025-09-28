@@ -6,7 +6,7 @@ public class CaptchaDialog extends JDialog {
     private boolean captchaCorrecto = false;
 
     public CaptchaDialog(JFrame parent, boolean modal) {
-        super(parent, modal); 
+        super(parent, modal); // Llama al constructor de JDialog
         initComponents();
     }
 
@@ -17,6 +17,7 @@ public class CaptchaDialog extends JDialog {
 
         jCheckBoxRobot = new JCheckBox("No soy un robot");
         jCheckBoxRobot.setBounds(50, 40, 200, 30);
+        jCheckBoxRobot.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 18)); 
         add(jCheckBoxRobot);
 
         JButton aceptar = new JButton("Aceptar");
@@ -25,10 +26,10 @@ public class CaptchaDialog extends JDialog {
 
         aceptar.addActionListener(e -> {
             captchaCorrecto = jCheckBoxRobot.isSelected();
-            dispose(); 
+            dispose(); // cierra el diálogo
         });
 
-        setLocationRelativeTo(null); 
+        setLocationRelativeTo(null); // centrar en pantalla
     }
 
     public boolean isCaptchaCorrecto() {
