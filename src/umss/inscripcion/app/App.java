@@ -15,7 +15,8 @@ public class App extends JFrame {
     private JTextField txtApellidoPostulante;
     private JTextField txtCIPostulante;
     private JComboBox<String> cmbCursos; 
-    private int selectedCursoId = -1;    
+    private int selectedCursoId = -1;  
+    private JTextField txtCorreoPostulante, txtTelefonoPostulante;  
 
     public App() {
         // Configuración básica de la ventana
@@ -89,6 +90,9 @@ public class App extends JFrame {
         addLabelAndField(panelInscripcionCurso, gbcCurso, 2, "CI:", new JTextField(15));
         txtCIPostulante = (JTextField) panelInscripcionCurso.getComponent(panelInscripcionCurso.getComponentCount() - 1);
 
+        addLabelAndField(panelInscripcionCurso, gbcCurso, 3, "Correo:", txtCorreoPostulante = new JTextField(15));
+        addLabelAndField(panelInscripcionCurso, gbcCurso, 4, "Teléfono:", txtTelefonoPostulante = new JTextField(15));
+
         cmbCursos = new JComboBox<>();
         cmbCursos.setFont(new Font("Arial", Font.PLAIN, 14));
         cmbCursos.setBorder(BorderFactory.createCompoundBorder(
@@ -119,7 +123,7 @@ public class App extends JFrame {
 
 // Etiqueta "Curso:"
 gbcCurso.gridx = 0;
-gbcCurso.gridy = 3;
+gbcCurso.gridy = 5;
 gbcCurso.gridwidth = 1;
 gbcCurso.fill = GridBagConstraints.HORIZONTAL;
 JLabel lblCurso = new JLabel("Curso:");
@@ -129,7 +133,7 @@ panelInscripcionCurso.add(lblCurso, gbcCurso);
 
 // ComboBox
 gbcCurso.gridx = 1;
-gbcCurso.gridy = 3;
+gbcCurso.gridy = 5;
 gbcCurso.gridwidth = 1;
 panelInscripcionCurso.add(cmbCursos, gbcCurso);
 
@@ -137,7 +141,7 @@ panelInscripcionCurso.add(cmbCursos, gbcCurso);
         JButton btnInscribirCurso = createStyledButton("Inscribir");
         btnInscribirCurso.addActionListener(e -> inscribirCurso());
         gbcCurso.gridx = 1;
-        gbcCurso.gridy = 4;
+        gbcCurso.gridy = 7;
         gbcCurso.gridwidth = 2;
         gbcCurso.fill = GridBagConstraints.NONE;
         gbcCurso.anchor = GridBagConstraints.CENTER;
@@ -327,8 +331,10 @@ panelInscripcionCurso.add(cmbCursos, gbcCurso);
          String nombre = txtNombrePostulante.getText().trim();
     String apellido = txtApellidoPostulante.getText().trim();
     String ci = txtCIPostulante.getText().trim();
+    String correo = txtCorreoPostulante.getText().trim();
+    String telefono = txtTelefonoPostulante.getText().trim();
 
-    if (nombre.isEmpty() || apellido.isEmpty() || ci.isEmpty()) {
+    if (nombre.isEmpty() || apellido.isEmpty() || ci.isEmpty() || correo.isEmpty() || telefono.isEmpty()) {
         JOptionPane.showMessageDialog(this, "Por favor, completa todos los campos obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
@@ -340,11 +346,13 @@ panelInscripcionCurso.add(cmbCursos, gbcCurso);
 
     try (Connection conn = DatabaseConnector.getConnection()) {
         // Buscar el postulante por nombre, apellido y CI
-        String sqlBuscar = "SELECT id_postulante FROM postulante WHERE nombre=? AND apellido=? AND ci=?";
+        String sqlBuscar = "SELECT id_postulante FROM Postulante WHERE nombre=? AND apellido=? AND ci=? AND correo=? AND telefono=?";
         PreparedStatement stmtBuscar = conn.prepareStatement(sqlBuscar);
         stmtBuscar.setString(1, nombre);
         stmtBuscar.setString(2, apellido);
         stmtBuscar.setString(3, ci);
+        stmtBuscar.setString(4, correo);
+        stmtBuscar.setString(5, telefono);
         ResultSet rs = stmtBuscar.executeQuery();
 
         if (rs.next()) {
