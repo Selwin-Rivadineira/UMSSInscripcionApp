@@ -55,6 +55,7 @@ public class ProcesoPago extends javax.swing.JFrame {
             }
         });
 
+        jTextFieldCambio.setEditable(false);
         jTextFieldCambio.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jTextFieldCambioActionPerformed(evt);
@@ -144,55 +145,17 @@ public class ProcesoPago extends javax.swing.JFrame {
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {                                           
         String opcion = (String) jComboBox1.getSelectedItem();
-        if (opcion == null) return;
+    if (opcion == null) return;
 
-        if (lblQR == null) {
-            lblQR = new JLabel();
-            lblQR.setBounds(50, 150, 200, 200); 
-            jPanel1.add(lblQR); 
-       }
+    jTextFieldIngresoPago.setText("");
+    jTextFieldCambio.setText("");
 
-        lblQR.setIcon(null);
-        jTextFieldIngresoPago.setEnabled(false);
-        jTextFieldCambio.setEnabled(false);
+    switch(opcion) {
+        case "QR" -> {
+            jTextFieldIngresoPago.setEnabled(false);
+            jTextFieldCambio.setEnabled(false);
 
-        switch(opcion) {
-            case "QR" -> {
-        try {
-            URL url = getClass().getResource("/imagenes/qrcode.png");
-            if (url == null) {
-                JOptionPane.showMessageDialog(this, "No se pudo encontrar la imagen del QR.");
-                return;
-            }
-            ImageIcon originalIcon = new ImageIcon(url);
-
-            Image scaledImage = originalIcon.getImage().getScaledInstance(300, 300, Image.SCALE_SMOOTH);
-            ImageIcon qrIcon = new ImageIcon(scaledImage);
-
-            JLabel qrLabel = new JLabel(qrIcon);
-            qrLabel.setHorizontalAlignment(JLabel.CENTER);
-            qrLabel.setVerticalAlignment(JLabel.CENTER);
-
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.add(qrLabel, BorderLayout.CENTER);
-
-            JDialog qrDialog = new JDialog(this, "Escanea el código QR", true);
-            qrDialog.getContentPane().add(panel);
-            qrDialog.setSize(350, 350);
-            qrDialog.setLocationRelativeTo(null); 
-
-            Timer timer = new Timer(10000, e -> qrDialog.dispose());
-            timer.setRepeats(false);
-            timer.start();
-
-            qrDialog.setVisible(true);
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo cargar la imagen del QR: " + ex.getMessage());
         }
-        jTextFieldIngresoPago.setEnabled(false);
-        jTextFieldCambio.setEnabled(false);
-}
 
         case "Efectivo" -> {
             jTextFieldIngresoPago.setEnabled(true);
@@ -200,16 +163,15 @@ public class ProcesoPago extends javax.swing.JFrame {
         }
 
         case "credito/debito" -> {
-           Object sel = jComboBox1.getSelectedItem();
-           if ("credito/debito".equals(sel)) {
-               PagoTarjeta pagoFrame = new PagoTarjeta();
-               pagoFrame.setLocationRelativeTo(null); 
-               pagoFrame.setVisible(true);
-            }
+            jTextFieldIngresoPago.setEnabled(false);
+            jTextFieldCambio.setEnabled(false);
+
+            PagoTarjeta pagoFrame = new PagoTarjeta();
+            pagoFrame.setLocationRelativeTo(null); 
+            pagoFrame.setVisible(true);
         }
 
-        default -> {
-        }
+        default -> {}
     }
 
     this.repaint(); 
