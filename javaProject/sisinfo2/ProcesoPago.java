@@ -30,19 +30,17 @@ public class ProcesoPago extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
         jTextFieldIngresoPago = new javax.swing.JTextField();
         jTextFieldCambio = new javax.swing.JTextField();
         jBotonPagar = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jPanel1.setBackground(new java.awt.Color(0, 153, 255));
         jPanel1.setForeground(new java.awt.Color(51, 153, 255));
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI Black", 3, 18)); // NOI18N
-        jLabel1.setText("           Pago de inscripcion");
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "credito/debito", "efectivo ", "QR" }));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
@@ -64,6 +62,31 @@ public class ProcesoPago extends javax.swing.JFrame {
         });
 
         jBotonPagar.setText("pagar");
+        jBotonPagar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBotonPagarActionPerformed(evt);
+            }
+        });
+
+        jLabel2.setFont(new java.awt.Font("Segoe UI Black", 3, 18)); // NOI18N
+        jLabel2.setText("                    Proceder al pago");
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(15, 15, 15)
+                .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(9, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addGap(14, 14, 14))
+        );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -72,31 +95,31 @@ public class ProcesoPago extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(229, 229, 229)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jTextFieldIngresoPago)
+                            .addComponent(jTextFieldCambio, javax.swing.GroupLayout.DEFAULT_SIZE, 93, Short.MAX_VALUE)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(44, 44, 44)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                    .addComponent(jTextFieldIngresoPago)
-                                    .addComponent(jTextFieldCambio, javax.swing.GroupLayout.DEFAULT_SIZE, 93, Short.MAX_VALUE))
-                                .addGap(22, 22, 22)))))
-                .addContainerGap(56, Short.MAX_VALUE))
+                        .addContainerGap()
+                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(78, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addGap(0, 0, Short.MAX_VALUE)
                 .addComponent(jBotonPagar)
                 .addGap(18, 18, 18))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(15, 15, 15)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
                 .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 99, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 74, Short.MAX_VALUE)
                 .addComponent(jTextFieldIngresoPago, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(jTextFieldCambio, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -125,8 +148,8 @@ public class ProcesoPago extends javax.swing.JFrame {
 
         if (lblQR == null) {
             lblQR = new JLabel();
-            lblQR.setBounds(50, 150, 200, 200); // Ajusta tamaño y posición según tu JFrame
-            jPanel1.add(lblQR); // agregar al panel
+            lblQR.setBounds(50, 150, 200, 200); 
+            jPanel1.add(lblQR); 
        }
 
         lblQR.setIcon(null);
@@ -176,57 +199,19 @@ public class ProcesoPago extends javax.swing.JFrame {
             jTextFieldCambio.setEnabled(true);
         }
 
-        case "Tarjeta" -> {
-            // Abrir ventana para pago con tarjeta
-            JFrame tarjetaFrame = new JFrame("Pago con Tarjeta");
-            tarjetaFrame.setSize(300, 250);
-            tarjetaFrame.setLayout(null);
-
-            JLabel lblNumero = new JLabel("Número de tarjeta:");
-            lblNumero.setBounds(20, 20, 120, 25);
-            JTextField txtNumero = new JTextField();
-            txtNumero.setBounds(150, 20, 120, 25);
-
-            JLabel lblFecha = new JLabel("Fecha (MM/AA):");
-            lblFecha.setBounds(20, 60, 120, 25);
-            JTextField txtFecha = new JTextField();
-            txtFecha.setBounds(150, 60, 80, 25);
-
-            JLabel lblCVV = new JLabel("CVV:");
-            lblCVV.setBounds(20, 100, 120, 25);
-            JTextField txtCVV = new JTextField();
-            txtCVV.setBounds(150, 100, 50, 25);
-
-            JButton btnPagar = new JButton("Pagar");
-            btnPagar.setBounds(100, 150, 100, 30);
-            btnPagar.addActionListener(ev -> {
-                String fecha = txtFecha.getText().trim();
-                if (!fecha.matches("(0[1-9]|1[0-2])/\\d{2}")) {
-                    JOptionPane.showMessageDialog(tarjetaFrame, "Fecha inválida (MM/AA).");
-                    return;
-                }
-                JOptionPane.showMessageDialog(tarjetaFrame, "Pago procesado correctamente.");
-                tarjetaFrame.dispose();
-            });
-
-            tarjetaFrame.add(lblNumero);
-            tarjetaFrame.add(txtNumero);
-            tarjetaFrame.add(lblFecha);
-            tarjetaFrame.add(txtFecha);
-            tarjetaFrame.add(lblCVV);
-            tarjetaFrame.add(txtCVV);
-            tarjetaFrame.add(btnPagar);
-
-            tarjetaFrame.setLocationRelativeTo(this);
-            tarjetaFrame.setVisible(true);
+        case "credito/debito" -> {
+           Object sel = jComboBox1.getSelectedItem();
+           if ("credito/debito".equals(sel)) {
+               PagoTarjeta pagoFrame = new PagoTarjeta();
+               pagoFrame.setLocationRelativeTo(null); 
+               pagoFrame.setVisible(true);
+            }
         }
 
         default -> {
-            // No hacer nada extra
         }
     }
 
-    // Refrescar JFrame
     this.repaint(); 
     }                                          
 
@@ -238,6 +223,10 @@ public class ProcesoPago extends javax.swing.JFrame {
         
     }                                                
 
+    private void jBotonPagarActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        JOptionPane.showMessageDialog(null, "Operación realizada con éxito");
+    }                                           
+
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(() -> {
             new ProcesoPago().setVisible(true);
@@ -248,8 +237,9 @@ public class ProcesoPago extends javax.swing.JFrame {
     // Variables declaration - do not modify                     
     private javax.swing.JButton jBotonPagar;
     private javax.swing.JComboBox<String> jComboBox1;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JTextField jTextFieldCambio;
     private javax.swing.JTextField jTextFieldIngresoPago;
     // End of variables declaration                   
