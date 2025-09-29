@@ -237,6 +237,10 @@ public class InicioSecion extends javax.swing.JFrame {
           rs = pst.executeQuery();
           if (rs.next()) {
               JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
+              JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
+              InicioSesionDatos.setCorreo(jTextFieldCorreo.getText());
+              InicioSesionDatos.setNtelefono(JtexFieldTelefono.getText()); 
+              InicioSesionDatos.setCI(JtextFieldCI.getText()); 
           } else {
               JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
           }
