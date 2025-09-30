@@ -1,4 +1,0 @@
-group:
-  id: mi-mongodb-azure-sdk-public-cloud
-  displayName: Connect to Azure Cosmos DB for MongoDB via Service Connector in Azure public cloud
-  description: Make Java application or Spring Boot application connect to Azure Cosmos DB for MongoDB via Service Connector in Azure public cloud

@@ -1,4 +1,0 @@
-group:
-  id: migrate-to-azure-keyvault
-  displayName: Migrate to Azure Key Vault
-  description: Migrate to Azure Key Vault

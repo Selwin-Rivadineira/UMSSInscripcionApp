@@ -1,4 +1,0 @@
-group:
-  id: mi-eventhub-azure-sdk-public-cloud
-  displayName: Azure Event Hub Managed Identity via Azure SDK for Public Cloud
-  description: Azure Event Hub Managed Identity via Azure SDK for Public Cloud

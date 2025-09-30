@@ -1,4 +1,0 @@
-group:
-  id: mi-servicebus-spring
-  displayName: Azure Service Bus Managed Identity via Spring
-  description: Azure Service Bus Managed Identity via Spring

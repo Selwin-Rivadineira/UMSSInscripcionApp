@@ -1,4 +1,0 @@
-group:
-  id: javax.email-send-to-azure-communication-service-email
-  displayName: Email to Azure Communication via Javax
-  description: Email to Azure Communication via Javax

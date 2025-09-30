@@ -1,6 +1,0 @@
-{
-    "DEFAULT_TOOLSET_IMAGE": "mcr.microsoft.com/azurespringapps/images/migration-copilot-toolset:release-37807",
-    "ENABLE_VECTOR_STORE": false,
-    "ENABLE_RERANKING": false,
-    "APPCAT_IMAGE_NAME": "mcr.microsoft.com/azurespringapps/images/migration-copilot-toolset:20250403"
-}

@@ -1,4 +1,0 @@
-group:
-  id: sqs-to-servicebus
-  displayName: AWS SQS to Azure Service Bus
-  description: AWS SQS to Azure Service Bus

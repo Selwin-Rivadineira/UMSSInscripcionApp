@@ -1,4 +1,0 @@
-group:
-  id: mi-mysql-spring
-  displayName: Azure MySQL Managed Identity via Spring
-  description: Azure MySQL Managed Identity via Spring

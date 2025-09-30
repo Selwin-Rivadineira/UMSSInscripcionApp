@@ -1,4 +1,0 @@
-group:
-  id: oracle-to-postgresql
-  displayName: Oracle DB to PostgreSQL via Spring
-  description: Oracle DB to PostgreSQL via Spring

@@ -1,4 +1,0 @@
-group:
-  id: mi-cassandra-azure-sdk-public-cloud
-  displayName: Connect to Azure Cosmos DB for Cassandra via Service Connector in Azure public cloud
-  description: Make Java application or Spring Boot application connect to Azure Cosmos DB for Cassandra via Service Connector in Azure public cloud

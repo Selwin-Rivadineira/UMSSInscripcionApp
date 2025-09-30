@@ -1,4 +1,0 @@
-group:
-  id: mi-eventhub-spring
-  displayName: Azure Event Hub Managed Identity via Spring
-  description: Azure Event Hub Managed Identity via Spring
