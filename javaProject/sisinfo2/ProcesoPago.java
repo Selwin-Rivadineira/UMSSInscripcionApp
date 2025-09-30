@@ -1,15 +1,7 @@
 package sisinfo2;
 import java.awt.BorderLayout;
-import java.awt.Image;
-import java.net.URL;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.Timer;
 
 /**
@@ -22,6 +14,11 @@ public class ProcesoPago extends javax.swing.JFrame {
     public ProcesoPago() {
         initComponents(); 
         this.setLocationRelativeTo(null);
+        getContentPane().removeAll(); 
+         getContentPane().setLayout(new BorderLayout()); 
+         add(jPanel1, BorderLayout.CENTER); 
+         add(AbrirLinksJFrame.crearPieDePagina(this), BorderLayout.SOUTH); 
+         revalidate(); 
         
     }
 

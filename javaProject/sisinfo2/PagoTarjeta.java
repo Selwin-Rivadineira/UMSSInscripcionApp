@@ -1,5 +1,6 @@
 package sisinfo2;
 import javax.swing.JOptionPane;
+import java.awt.BorderLayout;
 
 /**
  *
@@ -9,8 +10,13 @@ public class PagoTarjeta extends javax.swing.JFrame {
     public PagoTarjeta() {
         initComponents();
         this.setLocationRelativeTo(null);
+         getContentPane().removeAll(); 
+         getContentPane().setLayout(new BorderLayout()); 
+         add(jPanel1, BorderLayout.CENTER); 
+         add(AbrirLinksJFrame.crearPieDePagina(this), BorderLayout.SOUTH); 
+         revalidate();    
     }
-    @SuppressWarnings("unchecked")
+   // @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 

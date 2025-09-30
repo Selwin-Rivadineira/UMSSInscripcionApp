@@ -6,7 +6,7 @@ public class CaptchaDialog extends JDialog {
     private boolean captchaCorrecto = false;
 
     public CaptchaDialog(JFrame parent, boolean modal) {
-        super(parent, modal); // Llama al constructor de JDialog
+        super(parent, modal); 
         initComponents();
     }
 

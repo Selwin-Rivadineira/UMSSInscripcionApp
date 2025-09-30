@@ -6,11 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import ConexionBD.Conexion;
 import javax.swing.*;
+import java.awt.BorderLayout;
 public class InicioSecion extends javax.swing.JFrame {
     public InicioSecion() {
         initComponents();
         this.setLocationRelativeTo(null);
         generarCodigo(); 
+        
     }
 
     @SuppressWarnings("unchecked")
@@ -161,6 +163,11 @@ public class InicioSecion extends javax.swing.JFrame {
         );
 
         pack();
+        getContentPane().removeAll(); 
+         getContentPane().setLayout(new BorderLayout()); 
+         add(jPanel1, BorderLayout.CENTER); 
+         add(AbrirLinksJFrame.crearPieDePagina(this), BorderLayout.SOUTH); 
+         revalidate(); 
     }// </editor-fold>                        
 
     private void jTextFieldCorreoActionPerformed(java.awt.event.ActionEvent evt) {                                                 
@@ -238,9 +245,9 @@ public class InicioSecion extends javax.swing.JFrame {
           if (rs.next()) {
               JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
               JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso. ¡Bienvenido " + rs.getString("nombre") + "!");
-              InicioSesionDatos.setCorreo(jTextFieldCorreo.getText());
-              InicioSesionDatos.setNtelefono(JtexFieldTelefono.getText()); 
-              InicioSesionDatos.setCI(JtextFieldCI.getText()); 
+              //InicioSesionDatos.setCorreo(jTextFieldCorreo.getText());
+              //InicioSesionDatos.setNtelefono(JtexFieldTelefono.getText()); 
+              //InicioSesionDatos.setCI(JtextFieldCI.getText()); 
           } else {
               JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
           }
